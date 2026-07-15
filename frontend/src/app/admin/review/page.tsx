@@ -1,107 +1,58 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { authFetch } from "@/lib/fetch";
-import { TaskStatusBadge } from "@/components/task/TaskStatusBadge";
 
-interface ReviewItem {
-  help_id: string;
-  disaster_id: string;
-  category: string;
-  urgency: string;
-  description: string;
-  waiting_minutes: number;
-  sla_minutes: number;
-  status: string;
-  ai_flags?: string[];
-}
+interface ReviewItem { help_id: string; category: string; urgency: string; description: string; waiting_minutes: number; sla_minutes: number; status: string; ai_flags?: string[]; }
 
 export default function ReviewPage() {
   const [queue, setQueue] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchQueue();
-  }, []);
-
   const fetchQueue = async () => {
+    setLoading(true);
     const res = await authFetch("/reviews/queue");
-    const data = await res.json();
-    setQueue(data.queue || []);
+    setQueue((await res.json()).queue || []);
     setLoading(false);
   };
+  useEffect(() => { fetchQueue(); }, []);
 
-  const handleApprove = async (helpId: string) => {
-    await authFetch(`/reviews/${helpId}/approve`, { method: "POST" });
-    fetchQueue();
+  const approve = async (id: string) => { await authFetch(`/reviews/${id}/approve`, { method: "POST" }); fetchQueue(); };
+  const reject = async (id: string) => {
+    const reason = prompt("拒绝原因:"); if (!reason) return;
+    await authFetch(`/reviews/${id}/reject`, { method: "POST", body: JSON.stringify({ reason }) }); fetchQueue();
   };
-
-  const handleReject = async (helpId: string) => {
-    const reason = prompt("拒绝原因:");
-    if (!reason) return;
-    await authFetch(`/reviews/${helpId}/reject`, {
-      method: "POST",
-      body: JSON.stringify({ reason }),
-    });
-    fetchQueue();
-  };
-
-  if (loading) return <p className="text-gray-500 p-4">加载中...</p>;
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-bold">审核工作台 ({queue.length})</h1>
-
+    <div className="space-y-5">
+      <h1 className="text-xl font-bold text-slate-800">审核工作台 ({queue.length})</h1>
+      {loading && <p className="text-slate-400">加载中...</p>}
       <div className="space-y-3">
-        {queue.map((item) => {
-          const isOverdue = item.waiting_minutes > item.sla_minutes;
-          const isWarning = item.waiting_minutes > item.sla_minutes * 0.8;
-
+        {queue.map(item => {
+          const overdue = item.waiting_minutes > item.sla_minutes;
           return (
-            <div
-              key={item.help_id}
-              className={`bg-white rounded-lg shadow p-4 border ${
-                isOverdue ? "border-red-500 bg-red-50" : isWarning ? "border-yellow-500" : "border-gray-200"
-              }`}
-            >
+            <div key={item.help_id} className={`card p-4 border-l-4 ${overdue ? "border-l-red-500" : "border-l-primary-400"}`}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium">{item.category}</span>
-                    <TaskStatusBadge status={item.urgency === "critical" ? "rescuing" : "pending_review"} />
-                    {isOverdue && <span className="text-xs text-red-600 font-bold ml-2">超时!</span>}
+                    <span className="font-medium text-slate-700">{item.category}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${item.urgency==="critical"?"bg-red-100 text-red-700":"bg-slate-100 text-slate-600"}`}>{item.urgency}</span>
+                    {overdue && <span className="text-xs text-red-600 font-bold">超时!</span>}
                   </div>
-                  <p className="text-sm text-gray-600 line-clamp-2">{item.description}</p>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-                    <span>等待: {Math.round(item.waiting_minutes)}分钟</span>
-                    <span>SLA: {item.sla_minutes}分钟</span>
-                    {item.ai_flags && item.ai_flags.length > 0 && (
-                      <span className="text-yellow-600">AI标记: {item.ai_flags.join(", ")}</span>
-                    )}
+                  <p className="text-sm text-slate-500 line-clamp-2">{item.description}</p>
+                  <div className="flex gap-3 mt-2 text-xs text-slate-400">
+                    <span>{Math.round(item.waiting_minutes)}min / SLA {item.sla_minutes}min</span>
+                    {item.ai_flags?.length ? <span className="text-amber-600">AI: {item.ai_flags.join(", ")}</span> : null}
                   </div>
                 </div>
                 <div className="flex gap-2 ml-4">
-                  <button
-                    onClick={() => handleApprove(item.help_id)}
-                    className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700"
-                  >
-                    通过
-                  </button>
-                  <button
-                    onClick={() => handleReject(item.help_id)}
-                    className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700"
-                  >
-                    驳回
-                  </button>
+                  <button onClick={() => approve(item.help_id)} className="btn-primary !bg-emerald-600 hover:!bg-emerald-700 !py-1.5 !text-xs">通过</button>
+                  <button onClick={() => reject(item.help_id)} className="btn-outline !py-1.5 !text-xs !border-red-200 !text-red-600 hover:!bg-red-50">驳回</button>
                 </div>
               </div>
             </div>
           );
         })}
-
-        {queue.length === 0 && (
-          <p className="text-gray-500 text-center py-8">暂无待审核求助</p>
-        )}
+        {!loading && queue.length === 0 && <p className="text-center text-slate-400 py-8">暂无待审核求助 🎉</p>}
       </div>
     </div>
   );

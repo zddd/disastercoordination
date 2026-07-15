@@ -157,6 +157,7 @@ func main() {
 		v1.POST("/auth/login", authHandler.Login)
 		v1.POST("/helps", helpHandler.Create)
 		v1.GET("/helps/:id/status", helpHandler.Status)
+		v1.GET("/disasters/active", disasterHandler.Active) // Public: victims need to know active disasters
 		v1.POST("/files/upload", uploadHandler.Upload)
 	}
 	v1.GET("/files/:id", uploadHandler.ServeFile)
@@ -185,7 +186,7 @@ func main() {
 	{
 		admin.POST("/disasters", disasterHandler.Create)
 		admin.GET("/disasters", disasterHandler.List)
-		admin.GET("/disasters/active", disasterHandler.Active)
+		// /disasters/active is public — see above
 		admin.GET("/disasters/:id", disasterHandler.Get)
 		admin.PUT("/disasters/:id/close", disasterHandler.Close)
 		admin.GET("/reviews/queue", reviewHandler.Queue)
