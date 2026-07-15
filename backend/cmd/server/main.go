@@ -42,11 +42,12 @@ func main() {
 	r := gin.New()
 	r.Use(gin.Recovery())
 
-	// Initialize handlers
-	// In full version, services and repositories would be wired here via dependency injection.
-	// For MVP, handler initialization uses placeholder nil services (T3-T6 replace them).
+	// Initialize handlers with placeholder nil services.
+	// Services will be wired in when T5-T6 complete the full dependency chain.
 	uploadHandler := handler.NewUploadHandler(cfg.UploadDir)
-	helpHandler := handler.NewHelpHandler(nil) // Will be replaced when service layer is wired in T3
+	helpHandler := handler.NewHelpHandler(nil)
+	disasterHandler := handler.NewDisasterHandler(nil)
+	reviewHandler := handler.NewReviewHandler(nil)
 
 	// Global middleware chain
 	r.Use(middleware.CORS())
@@ -114,17 +115,17 @@ func main() {
 	admin.Use(middleware.RequireRole("admin", "commander", "reviewer", "operator"))
 	{
 		// Disaster management
-		admin.POST("/disasters", placeholderHandler("disasters.create"))
-		admin.GET("/disasters", placeholderHandler("disasters.list"))
-		admin.GET("/disasters/active", placeholderHandler("disasters.active"))
-		admin.GET("/disasters/:id", placeholderHandler("disasters.get"))
-		admin.PUT("/disasters/:id/close", placeholderHandler("disasters.close"))
+		admin.POST("/disasters", disasterHandler.Create)
+		admin.GET("/disasters", disasterHandler.List)
+		admin.GET("/disasters/active", disasterHandler.Active)
+		admin.GET("/disasters/:id", disasterHandler.Get)
+		admin.PUT("/disasters/:id/close", disasterHandler.Close)
 
 		// Review operations
-		admin.GET("/reviews/queue", placeholderHandler("reviews.queue"))
-		admin.POST("/reviews/:id/approve", placeholderHandler("reviews.approve"))
-		admin.POST("/reviews/:id/reject", placeholderHandler("reviews.reject"))
-		admin.POST("/reviews/merge", placeholderHandler("reviews.merge"))
+		admin.GET("/reviews/queue", reviewHandler.Queue)
+		admin.POST("/reviews/:id/approve", reviewHandler.Approve)
+		admin.POST("/reviews/:id/reject", reviewHandler.Reject)
+		admin.POST("/reviews/merge", reviewHandler.Merge)
 
 		// Dispatch operations
 		admin.GET("/dispatch/pool", placeholderHandler("dispatch.pool"))
