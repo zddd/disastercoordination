@@ -3,26 +3,7 @@
   themes: light --default, dark --prefersdark;
 }
 
-/* daisyUI's focus outline override.
-   daisyUI uses compound :is() selectors with higher specificity.
-   Must be in @layer utilities to win over daisyUI's @layer base rules. */
-@layer utilities {
-  .input:focus,
-  .input:focus-within,
-  :is(.select:focus, .select:focus-within, .select:open),
-  .textarea:focus,
-  .textarea:focus-within {
-    outline-color: var(--color-primary) !important;
-  }
-
-  input:focus,
-  select:focus,
-  textarea:focus {
-    outline-color: var(--color-primary) !important;
-  }
-}
-
-/* Primary: soft blue (overrides daisyUI's default purple) */
+/* Primary: soft blue palette */
 @theme inline {
   --color-primary: #3b82f6;
   --color-primary-content: #ffffff;
@@ -40,13 +21,12 @@
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
+  --border: 1px;
   --font-sans: system-ui, -apple-system, sans-serif;
   --font-mono: ui-monospace, monospace;
-  /* Ensure daisyUI --border matches */
-  --border: 1px;
 }
 
-/* Sidebar: daisyUI doesn't have one, our custom deep blue */
+/* Custom sidebar (daisyUI has no sidebar component) */
 .sidebar {
   background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
   color: white;
