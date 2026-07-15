@@ -44,7 +44,49 @@ services:
       - minio_data:/data
     restart: unless-stopped
 
+  # ---- Application Services ----
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dc-backend
+    environment:
+      DATABASE_URL: "postgres://dc_user:dc_pass@postgres:5432/dc_center?sslmode=disable"
+      REDIS_URL: "redis://redis:6379/0"
+      JWT_SECRET: "change-me-in-production-use-random-64-chars"
+      PORT: "8080"
+      MINIO_ENDPOINT: "minio:9000"
+      MINIO_ACCESS_KEY: "minioadmin"
+      MINIO_SECRET_KEY: "minioadmin"
+      MINIO_BUCKET: "dc-center"
+      LOG_LEVEL: "info"
+      UPLOAD_DIR: "/app/uploads"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - uploads_data:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: dc-frontend
+    environment:
+      BACKEND_URL: "http://backend:8080"
+      NEXT_PUBLIC_API_URL: "http://localhost:8080/api/v1"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 volumes:
   pgdata:
   redis_data:
   minio_data:
+  uploads_data:
