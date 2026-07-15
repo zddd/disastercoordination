@@ -140,11 +140,17 @@ func TestTruncateString(t *testing.T) {
 
 // mockTaskRepo implements repository.TaskRepository for testing.
 type mockTaskRepo struct {
+	getByIDFn        func(ctx context.Context, id string) (*model.RescueTask, error)
 	listByDisasterFn func(ctx context.Context, id string) ([]*model.RescueTask, error)
 }
 
 func (m *mockTaskRepo) Create(ctx context.Context, t *model.RescueTask) error { return nil }
-func (m *mockTaskRepo) GetByID(ctx context.Context, id string) (*model.RescueTask, error) { return nil, nil }
+func (m *mockTaskRepo) GetByID(ctx context.Context, id string) (*model.RescueTask, error) {
+	if m.getByIDFn != nil {
+		return m.getByIDFn(ctx, id)
+	}
+	return nil, nil
+}
 func (m *mockTaskRepo) ListByTeam(ctx context.Context, teamID string, status string) ([]*model.RescueTask, error) { return nil, nil }
 func (m *mockTaskRepo) ListByDisaster(ctx context.Context, id string) ([]*model.RescueTask, error) {
 	if m.listByDisasterFn != nil {

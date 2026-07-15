@@ -48,6 +48,8 @@ func main() {
 	helpHandler := handler.NewHelpHandler(nil)
 	disasterHandler := handler.NewDisasterHandler(nil)
 	reviewHandler := handler.NewReviewHandler(nil)
+	dispatchHandler := handler.NewDispatchHandler(nil)
+	taskHandler := handler.NewTaskHandler(nil)
 
 	// Global middleware chain
 	r.Use(middleware.CORS())
@@ -104,10 +106,10 @@ func main() {
 		auth.PUT("/teams/:id/location", placeholderHandler("teams.location"))
 
 		// Task endpoints (rescue team operations)
-		auth.GET("/tasks/mine", placeholderHandler("tasks.mine"))
-		auth.GET("/tasks/:id", placeholderHandler("tasks.get"))
-		auth.PUT("/tasks/:id/status", placeholderHandler("tasks.status"))
-		auth.POST("/tasks/:id/reject", placeholderHandler("tasks.reject"))
+		auth.GET("/tasks/mine", taskHandler.ListMine)
+		auth.GET("/tasks/:id", taskHandler.Get)
+		auth.PUT("/tasks/:id/status", taskHandler.UpdateStatus)
+		auth.POST("/tasks/:id/reject", taskHandler.Reject)
 	}
 
 	// ---- Admin endpoints (role verification required) ----
@@ -128,9 +130,9 @@ func main() {
 		admin.POST("/reviews/merge", reviewHandler.Merge)
 
 		// Dispatch operations
-		admin.GET("/dispatch/pool", placeholderHandler("dispatch.pool"))
-		admin.POST("/dispatch/assign", placeholderHandler("dispatch.assign"))
-		admin.POST("/dispatch/batch-assign", placeholderHandler("dispatch.batch"))
+		admin.GET("/dispatch/pool", dispatchHandler.Pool)
+		admin.POST("/dispatch/assign", dispatchHandler.Assign)
+		admin.POST("/dispatch/batch-assign", dispatchHandler.BatchAssign)
 
 		// Team management (admin only)
 		admin.POST("/teams/:id/verify", placeholderHandler("teams.verify"))
