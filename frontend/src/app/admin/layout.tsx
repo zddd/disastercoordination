@@ -21,8 +21,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex min-h-screen bg-base-200">
-      {/* Sidebar */}
-      <aside className="drawer-side sidebar w-64 flex flex-col">
+      {/* Sidebar — NOT drawer-side (that's a daisyUI drawer sub-component, defaults hidden) */}
+      <aside className="sidebar w-64 flex-shrink-0 flex flex-col min-h-screen">
         <div className="p-5 border-b border-white/10">
           <h2 className="text-lg font-bold tracking-wide">应急调度中心</h2>
           <p className="text-xs text-white/50 mt-1" suppressHydrationWarning>角色: {mounted ? role : "..."}</p>
