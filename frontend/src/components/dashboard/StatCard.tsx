@@ -12,10 +12,10 @@ export function StatCard({
   color?: "red" | "green" | "yellow" | "gray";
 }) {
   const colorClasses: Record<string, string> = {
-    red: "bg-red-50 text-red-700 border-red-200",
+    red: "bg-primary/10 text-primary border-primary/20",
     green: "bg-green-50 text-green-700 border-green-200",
-    yellow: "bg-yellow-50 text-yellow-700 border-yellow-200",
-    gray: "bg-gray-50 text-gray-700 border-gray-200",
+    yellow: "bg-amber-50 text-amber-700 border-amber-200",
+    gray: "bg-slate-50 text-slate-500 border-slate-200",
   };
 
   return (

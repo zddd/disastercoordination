@@ -41,7 +41,7 @@ export default function TeamTasksPage() {
                   <button onClick={async () => {
                     const reason = prompt("拒单原因:"); if(!reason) return;
                     await authFetch(`/tasks/${task.id}/reject`, {method:"POST", body:JSON.stringify({reason})}); load();
-                  }} className="btn btn-sm btn-outline btn-error flex-1">拒单</button>
+                  }} className="btn btn-sm btn-outline flex-1">拒单</button>
                 )}
                 {task.status==="rescuing" && (
                   <button onClick={() => updateStatus(task.id, "unable")}

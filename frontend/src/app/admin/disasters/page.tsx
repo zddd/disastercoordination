@@ -73,7 +73,7 @@ export default function DisastersPage() {
                   <td>
                     {d.status === "active" && (
                       <button onClick={async () => { if(confirm("确认关闭？")){ await authFetch(`/disasters/${d.id}/close`,{method:"PUT"}); load(); }}}
-                              className="btn btn-ghost btn-xs text-error">关闭</button>
+                              className="btn btn-ghost btn-xs">关闭</button>
                     )}
                   </td>
                 </tr>

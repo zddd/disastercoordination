@@ -8,7 +8,7 @@ export default function TeamLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="flex flex-col min-h-screen bg-base-200">
-      <header className="bg-error text-error-content p-4 flex justify-between items-center">
+      <header className="bg-primary text-primary-content p-4 flex justify-between items-center">
         <h1 className="text-lg font-bold">救援任务</h1>
         <button onClick={() => { clearAuth(); router.push("/login"); }}
                 className="btn btn-ghost btn-sm">

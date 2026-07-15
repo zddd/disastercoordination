@@ -34,11 +34,11 @@ export default function TeamsPage() {
                 {!team.verified && team.status==="pending" && (
                   <div className="flex gap-1">
                     <button onClick={async () => { await authFetch(`/teams/${team.id}/verify`, {method:"POST"}); load(); }}
-                            className="btn btn-success btn-xs">通过</button>
+                            className="btn btn-primary btn-xs">通过</button>
                     <button onClick={async () => {
                       const r = prompt("拒绝原因:"); if(!r) return;
                       await authFetch(`/teams/${team.id}/reject`, {method:"POST", body:JSON.stringify({reason:r})}); load();
-                    }} className="btn btn-xs btn-outline btn-error">拒绝</button>
+                    }} className="btn btn-xs btn-outline">拒绝</button>
                   </div>
                 )}
               </div>

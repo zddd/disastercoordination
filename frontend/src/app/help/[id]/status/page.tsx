@@ -46,12 +46,12 @@ export default function HelpStatusPage() {
             const done = i <= current; const now = i === current;
             return (
               <div key={step.key} className="flex items-start gap-3">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${done ? "bg-success text-success-content" : now ? "bg-error text-error-content animate-pulse" : "bg-base-300"}`}>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${done ? "bg-primary text-primary-content" : now ? "bg-primary text-primary-content animate-pulse" : "bg-base-300"}`}>
                   {done && !now ? "✓" : now ? "●" : ""}
                 </div>
                 <div className="flex-1">
-                  <p className={`text-sm font-medium ${now ? "text-error" : done ? "text-base-content" : "text-base-content/30"}`}>{step.label}</p>
-                  {now && <p className="text-xs text-error mt-1">{status.progress_description}</p>}
+                  <p className={`text-sm font-medium ${now ? "text-primary" : done ? "text-base-content" : "text-base-content/30"}`}>{step.label}</p>
+                  {now && <p className="text-xs text-primary mt-1">{status.progress_description}</p>}
                 </div>
               </div>
             );

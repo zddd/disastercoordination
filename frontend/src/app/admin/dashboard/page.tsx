@@ -27,7 +27,7 @@ export default function DashboardPage() {
 
   const statItems = [
     { label:"求助总数", value:stats.total, className:"bg-blue-50 text-blue-700" },
-    { label:"紧急待处理", value:stats.critical, className:"bg-red-50 text-red-700" },
+    { label:"紧急待处理", value:stats.critical, className:"bg-primary/10 text-primary border-primary/20" },
     { label:"一般", value:stats.normal, className:"bg-amber-50 text-amber-700" },
     { label:"轻微", value:stats.mild, className:"bg-slate-50 text-slate-500" },
   ];
@@ -58,7 +58,7 @@ export default function DashboardPage() {
             {pool.slice(0, 15).map(item => (
               <div key={item.help_id} className="flex items-center justify-between p-3 bg-base-200 rounded-lg text-sm">
                 <div className="flex items-center gap-3">
-                  <span className={`w-2 h-2 rounded-full ${item.urgency==="critical"?"bg-red-500":"bg-amber-500"}`} />
+                  <span className={`w-2 h-2 rounded-full ${item.urgency==="critical"?"bg-primary":"bg-warning"}`} />
                   <span className="font-medium">{item.category}</span>
                   <span className="text-base-content/50 truncate max-w-[200px]">{item.description}</span>
                 </div>

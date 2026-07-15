@@ -20,7 +20,7 @@ export function MobileNav() {
               key={item.href}
               href={item.href}
               className={`flex flex-col items-center py-2 px-4 min-h-[44px] justify-center ${
-                active ? "text-red-600" : "text-gray-500"
+                active ? "text-primary" : "text-base-content/60"
               }`}
             >
               <span className="text-lg">{item.icon}</span>

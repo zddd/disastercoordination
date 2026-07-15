@@ -10,7 +10,7 @@ export default function HelpHomePage() {
         <p className="text-base-content/50 mt-2">请选择您的操作</p>
       </div>
 
-      <Link href="/help/submit" className="btn btn-error btn-block btn-lg">
+      <Link href="/help/submit" className="btn btn-primary btn-block btn-lg">
         我要求助
       </Link>
 

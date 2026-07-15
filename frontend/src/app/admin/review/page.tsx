@@ -46,8 +46,8 @@ export default function ReviewPage() {
                     </div>
                   </div>
                   <div className="flex gap-2 ml-4">
-                    <button onClick={() => approve(item.help_id)} className="btn btn-success btn-xs">通过</button>
-                    <button onClick={() => reject(item.help_id)} className="btn btn-xs btn-outline btn-error">驳回</button>
+                    <button onClick={() => approve(item.help_id)} className="btn btn-primary btn-xs">通过</button>
+                    <button onClick={() => reject(item.help_id)} className="btn btn-xs btn-outline">驳回</button>
                   </div>
                 </div>
               </div>
