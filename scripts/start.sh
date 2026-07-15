@@ -3,11 +3,13 @@
 # Disaster Coordination System — 一键启动/重启脚本
 #
 # 用法:
-#   ./scripts/start.sh              启动全部服务 (开发模式)
-#   ./scripts/start.sh --reset      清空数据库重新开始
-#   ./scripts/start.sh --prod       生产模式 (不执行seed)
-#   ./scripts/start.sh stop         停止所有服务
-#   ./scripts/start.sh logs         查看日志
+#   ./scripts/start.sh                   启动全部服务 (开发模式)
+#   ./scripts/start.sh --reset           清空数据库重新开始
+#   ./scripts/start.sh --prod            生产模式 (不执行seed)
+#   ./scripts/start.sh stop              停止所有服务
+#   ./scripts/start.sh restart-backend   单独重启后端
+#   ./scripts/start.sh restart-frontend  单独重启前端
+#   ./scripts/start.sh logs              查看日志
 # ============================================================
 set -e
 
@@ -88,10 +90,13 @@ main() {
             cmd_logs
             exit 0
             ;;
-        _reset)
-            cmd_reset
-            # 重置后继续启动流程
-            mode="start"
+        restart-backend|rb)
+            cmd_restart_backend
+            exit 0
+            ;;
+        restart-frontend|rf)
+            cmd_restart_frontend
+            exit 0
             ;;
     esac
 
