@@ -64,19 +64,19 @@ export default function HelpSubmitPage() {
       const fd = new FormData();
       fd.append("disaster_id", selectedDisaster); fd.append("category", "custom");
       fd.append("urgency", "critical"); fd.append("description", "紧急求助！");
-      fd.append("affected_count", "1"); fd.append("latitude", String(lat)); fd.append("longitude", String(lng));
+      fd.append("affected_count", "1"); fd.append("latitude", String(lat || 30.5)); fd.append("longitude", String(lng || 104.0));
       const res = await fetch("http://localhost:8080/api/v1/helps", { method: "POST", body: fd });
-      if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
+      if (!res.ok) { setError(data.error || "发送失败"); return; }
       router.push(`/help/${data.help_id}/status`);
-    } catch (e) {
-      setError("发送失败，请检查网络后重试");
+    } catch (e: any) {
+      setError("网络连接失败: " + (e.message || "请检查网络"));
     } finally { setLoading(false); }
   };
 
   const handleSubmit = async () => {
-    if (!selectedDisaster || !category || !description) {
-      setError("请填写灾害、求助类型和描述"); return;
+    if (!selectedDisaster || !category) {
+      setError("请选择灾害和求助类型"); return;
     }
     setLoading(true); setError("");
     try {
@@ -86,16 +86,16 @@ export default function HelpSubmitPage() {
       }
       const fd = new FormData();
       fd.append("disaster_id", selectedDisaster); fd.append("category", category);
-      fd.append("urgency", urgency); fd.append("description", description);
-      fd.append("affected_count", String(affectedCount)); fd.append("latitude", String(lat)); fd.append("longitude", String(lng));
+      fd.append("urgency", urgency); fd.append("description", description || "求助");
+      fd.append("affected_count", String(affectedCount)); fd.append("latitude", String(lat || 30.5)); fd.append("longitude", String(lng || 104.0));
       if (contactName) fd.append("contact_name", contactName);
       if (phone) fd.append("phone", phone);
       const res = await fetch("http://localhost:8080/api/v1/helps", { method: "POST", body: fd });
-      if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
+      if (!res.ok) { setError(data.error || "提交失败"); return; }
       router.push(`/help/${data.help_id}/status`);
-    } catch (e) {
-      setError("提交失败，请重试");
+    } catch (e: any) {
+      setError("网络连接失败: " + (e.message || "请重试"));
     } finally { setLoading(false); }
   };
 
@@ -158,7 +158,7 @@ export default function HelpSubmitPage() {
           {/* Description */}
           <div className="form-control">
             <label className="label">
-              <span className="label-text">详细描述</span>
+              <span className="label-text">详细描述 <span className="text-base-content/40 font-normal">（可选）</span></span>
               <span className="label-text-alt">{description.length}/500</span>
             </label>
             <textarea value={description} onChange={e => setDescription(e.target.value.slice(0, 500))}
@@ -167,7 +167,7 @@ export default function HelpSubmitPage() {
 
           {/* Photos */}
           <div className="form-control">
-            <label className="label"><span className="label-text">现场照片（最多5张）</span></label>
+            <label className="label"><span className="label-text">现场照片 <span className="text-base-content/40 font-normal">（可选，最多5张）</span></span></label>
             <input type="file" accept="image/*,video/*" multiple capture="environment"
                    onChange={e => { const s = Array.from(e.target.files||[]); if(files.length+s.length>5){ setError("最多5个"); return; } setFiles([...files, ...s]); }}
                    className="file-input file-input-bordered w-full" />
@@ -177,19 +177,19 @@ export default function HelpSubmitPage() {
           {/* Contact info */}
           <div className="grid grid-cols-2 gap-3">
             <div className="form-control">
-              <label className="label"><span className="label-text">联系人</span></label>
+              <label className="label"><span className="label-text">联系人 <span className="text-base-content/40 font-normal">（可选）</span></span></label>
               <input type="text" value={contactName} onChange={e => setContactName(e.target.value)}
                      className="input input-bordered w-full" placeholder="姓名" />
             </div>
             <div className="form-control">
-              <label className="label"><span className="label-text">手机号</span></label>
+              <label className="label"><span className="label-text">手机号 <span className="text-base-content/40 font-normal">（可选）</span></span></label>
               <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
                      className="input input-bordered w-full" placeholder="13800138000" />
             </div>
           </div>
 
           {/* Submit */}
-          <button onClick={handleSubmit} disabled={loading || !selectedDisaster || !category || !description}
+          <button onClick={handleSubmit} disabled={loading || !selectedDisaster || !category}
                   className="btn btn-primary btn-block btn-lg">
             {loading ? <><span className="loading loading-spinner" /> 提交中...</> : "提交求助"}
           </button>
