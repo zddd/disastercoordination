@@ -15,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"disaster-coordination/internal/config"
+	"disaster-coordination/internal/handler"
 	"disaster-coordination/internal/middleware"
 )
 
@@ -41,6 +42,12 @@ func main() {
 	r := gin.New()
 	r.Use(gin.Recovery())
 
+	// Initialize handlers
+	// In full version, services and repositories would be wired here via dependency injection.
+	// For MVP, handler initialization uses placeholder nil services (T3-T6 replace them).
+	uploadHandler := handler.NewUploadHandler(cfg.UploadDir)
+	helpHandler := handler.NewHelpHandler(nil) // Will be replaced when service layer is wired in T3
+
 	// Global middleware chain
 	r.Use(middleware.CORS())
 	r.Use(middleware.Logger())
@@ -64,14 +71,16 @@ func main() {
 		v1.POST("/auth/login", placeholderHandler("auth.login"))
 
 		// Help request submission (public — victims can submit without login)
-		v1.POST("/helps", placeholderHandler("helps.create"))
+		v1.POST("/helps", helpHandler.Create)
 
 		// Public status tracking
-		v1.GET("/helps/:id/status", placeholderHandler("helps.status"))
+		v1.GET("/helps/:id/status", helpHandler.Status)
 
 		// File upload (public — allows unauthenticated upload for emergency)
-		v1.POST("/files/upload", placeholderHandler("files.upload"))
+		v1.POST("/files/upload", uploadHandler.Upload)
 	}
+	// Also serve uploaded files publicly
+	v1.GET("/files/:id", uploadHandler.ServeFile)
 
 	// ---- Authenticated endpoints (JWT required) ----
 	auth := v1.Group("")
@@ -81,8 +90,8 @@ func main() {
 		auth.GET("/auth/me", placeholderHandler("auth.me"))
 
 		// Help requests (authenticated views)
-		auth.GET("/helps/:id", placeholderHandler("helps.get"))
-		auth.GET("/helps/mine", placeholderHandler("helps.mine"))
+		auth.GET("/helps/:id", helpHandler.Get)
+		auth.GET("/helps/mine", helpHandler.ListMine)
 
 		// Events SSE (subscriptions)
 		auth.GET("/events/subscribe", placeholderHandler("events.subscribe"))
