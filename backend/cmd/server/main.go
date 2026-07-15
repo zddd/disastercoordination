@@ -62,17 +62,21 @@ func main() {
 	} else {
 		defer db.Close()
 
-		// ---- Auto-migration (dev mode only) ----
-		// In development, automatically create tables if they don't exist.
-		// In production (APP_ENV=production), migrations are run separately.
-		if isDevMode() {
-			if err := config.RunMigrations(db); err != nil {
-				slog.Warn("auto-migration failed (non-fatal)", "error", err)
-			} else {
-				slog.Info("auto-migration completed")
-			}
+		// ---- Auto-migration (always run) ----
+		// Tables must exist regardless of environment.
+		// Uses CREATE TABLE IF NOT EXISTS semantics via the SQL migration file.
+		if err := config.RunMigrations(db); err != nil {
+			slog.Warn("auto-migration failed (non-fatal)", "error", err)
+		} else {
+			slog.Info("auto-migration completed")
+		}
 
-			// Seed demo data if users table is empty
+		// ---- Seed data (dev only) ----
+		// In development, insert demo accounts so developers can log in immediately.
+		// In production (APP_ENV=production), seed is skipped — the first admin account
+		// must be created manually by the deployment operator via:
+		//   curl -X POST https://your-domain/api/v1/auth/register -d '{"username":"admin","password":"...","role":"admin"}'
+		if isDevMode() {
 			if err := config.RunSeedIfEmpty(db); err != nil {
 				slog.Warn("seed data insertion failed (non-fatal)", "error", err)
 			}
