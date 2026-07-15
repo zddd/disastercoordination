@@ -90,6 +90,16 @@ cmd_restart_frontend() {
 }
 
 # ============================================================
+# 子命令: restart — 同时重启前后端
+# ============================================================
+cmd_restart() {
+    log "重启全部服务..."
+    cmd_restart_backend
+    cmd_restart_frontend
+    log "全部服务重启完成"
+}
+
+# ============================================================
 # 主流程
 # ============================================================
 main() {
@@ -100,6 +110,7 @@ main() {
     case "$mode" in
         stop)               cmd_stop; exit 0 ;;
         logs)               cmd_logs; exit 0 ;;
+        restart)            cmd_restart; exit 0 ;;
         restart-backend|rb) cmd_restart_backend; exit 0 ;;
         restart-frontend|rf) cmd_restart_frontend; exit 0 ;;
     esac
