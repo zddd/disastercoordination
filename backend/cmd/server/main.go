@@ -22,6 +22,12 @@ import (
 	"disaster-coordination/internal/service"
 )
 
+// isDevMode returns true when running in development (non-release).
+// In dev mode, auto-migration and seed data are applied.
+func isDevMode() bool {
+	return os.Getenv("APP_ENV") != "production"
+}
+
 func main() {
 	// Initialize structured logger
 	logLevel := parseLogLevel(os.Getenv("LOG_LEVEL"))
@@ -55,6 +61,22 @@ func main() {
 		)
 	} else {
 		defer db.Close()
+
+		// ---- Auto-migration (dev mode only) ----
+		// In development, automatically create tables if they don't exist.
+		// In production (APP_ENV=production), migrations are run separately.
+		if isDevMode() {
+			if err := config.RunMigrations(db); err != nil {
+				slog.Warn("auto-migration failed (non-fatal)", "error", err)
+			} else {
+				slog.Info("auto-migration completed")
+			}
+
+			// Seed demo data if users table is empty
+			if err := config.RunSeedIfEmpty(db); err != nil {
+				slog.Warn("seed data insertion failed (non-fatal)", "error", err)
+			}
+		}
 	}
 
 	// ---- Step 3: Build repository layer ----
