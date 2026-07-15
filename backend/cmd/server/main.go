@@ -50,6 +50,12 @@ func main() {
 	reviewHandler := handler.NewReviewHandler(nil)
 	dispatchHandler := handler.NewDispatchHandler(nil)
 	taskHandler := handler.NewTaskHandler(nil)
+	authHandler := handler.NewAuthHandler(nil)
+	teamHandler := handler.NewTeamHandler(nil)
+
+	// SSE broker for real-time events (shared across handlers)
+	sseBroker := handler.NewSSEBroker()
+	sseHandler := handler.NewSSEHandler(sseBroker)
 
 	// Global middleware chain
 	r.Use(middleware.CORS())
@@ -70,8 +76,8 @@ func main() {
 	// ---- Public endpoints (no auth required) ----
 	{
 		// Authentication
-		v1.POST("/auth/register", placeholderHandler("auth.register"))
-		v1.POST("/auth/login", placeholderHandler("auth.login"))
+		v1.POST("/auth/register", authHandler.Register)
+		v1.POST("/auth/login", authHandler.Login)
 
 		// Help request submission (public — victims can submit without login)
 		v1.POST("/helps", helpHandler.Create)
@@ -90,20 +96,20 @@ func main() {
 	auth.Use(middleware.Auth(cfg.JWTSecret))
 	{
 		// User profile
-		auth.GET("/auth/me", placeholderHandler("auth.me"))
+		auth.GET("/auth/me", authHandler.Me)
 
 		// Help requests (authenticated views)
 		auth.GET("/helps/:id", helpHandler.Get)
 		auth.GET("/helps/mine", helpHandler.ListMine)
 
 		// Events SSE (subscriptions)
-		auth.GET("/events/subscribe", placeholderHandler("events.subscribe"))
+		auth.GET("/events/subscribe", sseHandler.Subscribe)
 
 		// Rescue team endpoints
-		auth.GET("/teams", placeholderHandler("teams.list"))
-		auth.GET("/teams/nearby", placeholderHandler("teams.nearby"))
-		auth.POST("/teams/register", placeholderHandler("teams.register"))
-		auth.PUT("/teams/:id/location", placeholderHandler("teams.location"))
+		auth.GET("/teams", teamHandler.List)
+		auth.GET("/teams/nearby", teamHandler.Nearby)
+		auth.POST("/teams/register", teamHandler.Register)
+		auth.PUT("/teams/:id/location", teamHandler.UpdateLocation)
 
 		// Task endpoints (rescue team operations)
 		auth.GET("/tasks/mine", taskHandler.ListMine)
@@ -135,8 +141,8 @@ func main() {
 		admin.POST("/dispatch/batch-assign", dispatchHandler.BatchAssign)
 
 		// Team management (admin only)
-		admin.POST("/teams/:id/verify", placeholderHandler("teams.verify"))
-		admin.POST("/teams/:id/reject", placeholderHandler("teams.reject"))
+		admin.POST("/teams/:id/verify", teamHandler.Verify)
+		admin.POST("/teams/:id/reject", teamHandler.Reject)
 	}
 
 	slog.Info("server starting",

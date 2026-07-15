@@ -163,9 +163,16 @@ func (m *mockTaskRepo) AppendStatusHistory(ctx context.Context, id string, entry
 func (m *mockTaskRepo) Reject(ctx context.Context, id string, reason string, operatorID string) error { return nil }
 
 // mockUserRepo implements repository.UserRepository for testing.
-type mockUserRepo struct{}
+type mockUserRepo struct {
+	getByUsernameFn func(ctx context.Context, username string) (*model.User, error)
+}
 
 func (m *mockUserRepo) Create(ctx context.Context, u *model.User) error { return nil }
 func (m *mockUserRepo) GetByID(ctx context.Context, id string) (*model.User, error) { return nil, nil }
-func (m *mockUserRepo) GetByUsername(ctx context.Context, username string) (*model.User, error) { return nil, nil }
+func (m *mockUserRepo) GetByUsername(ctx context.Context, username string) (*model.User, error) {
+	if m.getByUsernameFn != nil {
+		return m.getByUsernameFn(ctx, username)
+	}
+	return nil, nil
+}
 func (m *mockUserRepo) UpdateCreditScore(ctx context.Context, id string, delta float64) error { return nil }
