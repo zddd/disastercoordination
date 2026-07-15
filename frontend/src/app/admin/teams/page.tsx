@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { authFetch } from "@/lib/fetch";
 import { TaskStatusBadge } from "@/components/task/TaskStatusBadge";
 
 interface Team {
@@ -18,23 +19,22 @@ export default function TeamsPage() {
   const [teams, setTeams] = useState<Team[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/v1/teams")
+    authFetch("/teams")
       .then((r) => r.json())
       .then((data) => setTeams(data.teams || []))
       .catch(() => {});
   }, []);
 
   const handleVerify = async (teamId: string) => {
-    await fetch(`http://localhost:8080/api/v1/teams/${teamId}/verify`, { method: "POST" });
+    await authFetch(`/teams/${teamId}/verify`, { method: "POST" });
     window.location.reload();
   };
 
   const handleReject = async (teamId: string) => {
     const reason = prompt("拒绝原因:");
     if (!reason) return;
-    await fetch(`http://localhost:8080/api/v1/teams/${teamId}/reject`, {
+    await authFetch(`/teams/${teamId}/reject`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reason }),
     });
     window.location.reload();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { authFetch } from "@/lib/fetch";
 import { TaskStatusBadge } from "@/components/task/TaskStatusBadge";
 
 interface ReviewItem {
@@ -24,23 +25,22 @@ export default function ReviewPage() {
   }, []);
 
   const fetchQueue = async () => {
-    const res = await fetch("http://localhost:8080/api/v1/reviews/queue");
+    const res = await authFetch("/reviews/queue");
     const data = await res.json();
     setQueue(data.queue || []);
     setLoading(false);
   };
 
   const handleApprove = async (helpId: string) => {
-    await fetch(`http://localhost:8080/api/v1/reviews/${helpId}/approve`, { method: "POST" });
+    await authFetch(`/reviews/${helpId}/approve`, { method: "POST" });
     fetchQueue();
   };
 
   const handleReject = async (helpId: string) => {
     const reason = prompt("拒绝原因:");
     if (!reason) return;
-    await fetch(`http://localhost:8080/api/v1/reviews/${helpId}/reject`, {
+    await authFetch(`/reviews/${helpId}/reject`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reason }),
     });
     fetchQueue();

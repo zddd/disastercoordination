@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { authFetch } from "@/lib/fetch";
 import { TaskStatusBadge } from "@/components/task/TaskStatusBadge";
 
 interface Task {
@@ -20,12 +21,12 @@ export default function AdminTasksPage() {
 
   useEffect(() => {
     // In production, fetch from /tasks with admin context
-    fetch("http://localhost:8080/api/v1/disasters/active")
+    authFetch("/disasters/active")
       .then((r) => r.json())
       .then(async (data) => {
         if (data.disasters?.length > 0) {
-          const res = await fetch(
-            `http://localhost:8080/api/v1/dispatch/pool?disaster_id=${data.disasters[0].id}`,
+          const res = await authFetch(
+            `/dispatch/pool?disaster_id=${data.disasters[0].id}`,
           );
           // Task list would come from /tasks endpoint — using pool items as proxy for now
         }

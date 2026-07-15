@@ -57,9 +57,16 @@ export default function HelpStatusPage() {
   }, [helpId]);
 
   // SSE: subscribe to real-time status updates
+  // Note: SSE requires authentication — EventSource doesn't support custom headers,
+  // so we pass the token as a query parameter instead.
   useEffect(() => {
+    const token = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("token="))
+      ?.split("=")[1] || "";
+
     const eventSource = new EventSource(
-      `http://localhost:8080/api/v1/events/subscribe?help_id=${helpId}`,
+      `http://localhost:8080/api/v1/events/subscribe?help_id=${helpId}&token=${encodeURIComponent(token)}`,
     );
 
     eventSource.onmessage = (event) => {

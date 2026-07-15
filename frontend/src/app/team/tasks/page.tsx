@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { authFetch } from "@/lib/fetch";
 
 interface Task {
   id: string;
@@ -29,16 +30,15 @@ export default function TeamTasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/v1/tasks/mine")
+    authFetch("/tasks/mine")
       .then((r) => r.json())
       .then((data) => setTasks(data.tasks || []))
       .catch(() => {});
   }, []);
 
   const handleStatusUpdate = async (taskId: string, newStatus: string) => {
-    await fetch(`http://localhost:8080/api/v1/tasks/${taskId}/status`, {
+    await authFetch(`/tasks/${taskId}/status`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: newStatus }),
     });
     window.location.reload();
@@ -47,9 +47,8 @@ export default function TeamTasksPage() {
   const handleReject = async (taskId: string) => {
     const reason = prompt("拒单原因:");
     if (!reason) return;
-    await fetch(`http://localhost:8080/api/v1/tasks/${taskId}/reject`, {
+    await authFetch(`/tasks/${taskId}/reject`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reason }),
     });
     window.location.reload();

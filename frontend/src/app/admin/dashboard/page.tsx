@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { authFetch } from "@/lib/fetch";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { TaskStatusBadge } from "@/components/task/TaskStatusBadge";
 
@@ -30,7 +31,7 @@ export default function DashboardPage() {
   const [disasters, setDisasters] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/v1/disasters/active")
+    authFetch("/disasters/active")
       .then((r) => r.json())
       .then((data) => {
         const list = data.disasters || [];
@@ -41,7 +42,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!disasterId) return;
-    fetch(`http://localhost:8080/api/v1/dispatch/pool?disaster_id=${disasterId}`)
+    authFetch(`/dispatch/pool?disaster_id=${disasterId}`)
       .then((r) => r.json())
       .then((data) => {
         setStats({
