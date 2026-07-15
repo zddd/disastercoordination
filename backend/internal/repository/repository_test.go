@@ -2,7 +2,9 @@ package repository
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -62,7 +64,7 @@ func TestDisasterRepository_CreateAndGet(t *testing.T) {
 		Type:      model.DisasterEarthquake,
 		Level:     "red",
 		Status:    "active",
-		CreatedBy: "test-user",
+		CreatedBy: generateTestID(), // Must be valid UUID
 		StartedAt: time.Now(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -221,18 +223,13 @@ func TestRepository_NewPostgresRepository(t *testing.T) {
 	}
 }
 
-// generateTestID returns a unique ID for test entities to avoid conflicts.
-// Uses timestamp + random suffix for uniqueness without external deps.
+// generateTestID returns a valid UUID v4 for test entities.
 func generateTestID() string {
-	return time.Now().Format("20060102150405") + "-test-" + randomSuffix(6)
-}
-
-func randomSuffix(n int) string {
-	const letters = "abcdefghijklmnopqrstuvwxyz0123456789"
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letters[time.Now().UnixNano()%int64(len(letters))]
-		time.Sleep(1) // Ensure different random values
-	}
-	return string(b)
+	uuid := make([]byte, 16)
+	_, _ = rand.Read(uuid)
+	// Set version 4 and variant bits
+	uuid[6] = (uuid[6] & 0x0f) | 0x40
+	uuid[8] = (uuid[8] & 0x3f) | 0x80
+	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
+		uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:16])
 }
