@@ -3,27 +3,35 @@
   themes: light --default, dark --prefersdark;
 }
 
-/* daisyUI + TW4 border fix: TW4 preflight sets border:1px solid currentColor
-   on input/select/textarea, creating a visible ring around daisyUI components.
-   This reset removes the preflight border so daisyUI's own border styling takes over. */
+/* daisyUI + TW4 border & outline fix.
+   daisyUI's .input:focus sets outline:2px solid var(--input-color)
+   which renders as a dark ring. Override with primary color. */
 @layer base {
+  /* Override daisyUI's focus outline — must match daisyUI's specific selector */
+  .input:focus,
+  .input:focus-within,
+  .select:focus,
+  .select:focus-within,
+  .textarea:focus,
+  .textarea:focus-within {
+    outline-color: var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* Global form field base border color */
   input:where([type]),
   select,
   textarea {
-    border-style: solid;
     border-color: color-mix(in oklab, var(--color-base-content) 20%, transparent);
   }
 
-  /* Focus ring: use primary color instead of black */
-  input:focus,
+  /* Focus ring: make it match primary for all native inputs too */
+  input:where([type]):focus,
   select:focus,
-  textarea:focus,
-  .input:focus-within,
-  .select:focus-within,
-  .textarea:focus-within {
+  textarea:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 20%, transparent);
-    outline: none;
   }
 }
 
