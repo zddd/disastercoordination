@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { authFetch } from "@/lib/fetch";
 
@@ -26,47 +25,52 @@ export default function DashboardPage() {
     });
   }, [disasterId]);
 
+  const statItems = [
+    { label:"求助总数", value:stats.total, className:"bg-blue-50 text-blue-700" },
+    { label:"紧急待处理", value:stats.critical, className:"bg-red-50 text-red-700" },
+    { label:"一般", value:stats.normal, className:"bg-amber-50 text-amber-700" },
+    { label:"轻微", value:stats.mild, className:"bg-slate-50 text-slate-500" },
+  ];
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-slate-800">指挥看板</h1>
-        <select value={disasterId} onChange={e => setDisasterId(e.target.value)} className="input-field !w-auto">
+        <h1 className="text-2xl font-bold">指挥看板</h1>
+        <select value={disasterId} onChange={e => setDisasterId(e.target.value)}
+                className="select select-bordered select-sm w-64">
           {disasters.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label:"求助总数", value:stats.total, color:"bg-blue-50 text-blue-700 border-blue-100" },
-          { label:"紧急待处理", value:stats.critical, color:"bg-red-50 text-red-700 border-red-100" },
-          { label:"一般", value:stats.normal, color:"bg-amber-50 text-amber-700 border-amber-100" },
-          { label:"轻微", value:stats.mild, color:"bg-slate-50 text-slate-500 border-slate-100" },
-        ].map(s => (
-          <div key={s.label} className={`stat-card border ${s.color}`}>
-            <p className="text-3xl font-bold">{s.value}</p>
-            <p className="text-xs mt-1 opacity-70">{s.label}</p>
+        {statItems.map(s => (
+          <div key={s.label} className="stat rounded-box bg-base-100 shadow-sm border border-base-300">
+            <div className="stat-value text-2xl">{s.value}</div>
+            <div className="stat-title text-xs">{s.label}</div>
           </div>
         ))}
       </div>
 
-      <div className="card p-5">
-        <h2 className="font-semibold text-slate-700 mb-3">调度池 ({pool.length})</h2>
-        <div className="space-y-2">
-          {pool.slice(0, 15).map(item => (
-            <div key={item.help_id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg text-sm">
-              <div className="flex items-center gap-3">
-                <span className={`w-2 h-2 rounded-full ${item.urgency==="critical"?"bg-red-500":item.urgency==="normal"?"bg-amber-500":"bg-slate-400"}`} />
-                <span className="font-medium text-slate-700">{item.category}</span>
-                <span className="text-slate-400 truncate max-w-[200px]">{item.description}</span>
+      <div className="card bg-base-100 shadow-sm">
+        <div className="card-body">
+          <h2 className="card-title text-base">调度池 ({pool.length})</h2>
+          <div className="space-y-2 mt-2">
+            {pool.slice(0, 15).map(item => (
+              <div key={item.help_id} className="flex items-center justify-between p-3 bg-base-200 rounded-lg text-sm">
+                <div className="flex items-center gap-3">
+                  <span className={`w-2 h-2 rounded-full ${item.urgency==="critical"?"bg-red-500":"bg-amber-500"}`} />
+                  <span className="font-medium">{item.category}</span>
+                  <span className="text-base-content/50 truncate max-w-[200px]">{item.description}</span>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-base-content/40">
+                  <span className="badge badge-ghost badge-xs">{Math.round(item.waiting_minutes)}分钟</span>
+                  {item.is_isolated && <span className="badge badge-warning badge-xs">孤立上报</span>}
+                </div>
               </div>
-              <div className="flex items-center gap-3 text-xs text-slate-400">
-                <span>{Math.round(item.waiting_minutes)}分钟</span>
-                {item.is_isolated && <span className="text-amber-600">孤立上报</span>}
-              </div>
-            </div>
-          ))}
+            ))}
+            {pool.length === 0 && <p className="text-center text-base-content/40 py-8">调度池为空</p>}
+          </div>
         </div>
-        {pool.length === 0 && <p className="text-center text-slate-400 py-8">调度池为空 — 审核通过的求助会自动出现在这里</p>}
       </div>
     </div>
   );
