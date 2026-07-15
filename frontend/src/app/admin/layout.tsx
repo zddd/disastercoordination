@@ -1,12 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { clearAuth, getRole } from "@/lib/auth";
 
 /**
  * Admin Layout — sidebar navigation for management pages.
  * Collapsible on mobile, fixed sidebar on desktop.
+ *
+ * Role is loaded client-side via useEffect to avoid SSR hydration mismatch
+ * (localStorage is not available during server-side rendering).
  */
 export default function AdminLayout({
   children,
@@ -15,7 +18,14 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const role = getRole();
+  const [role, setRole] = useState(""); // Start empty to match SSR
+  const [mounted, setMounted] = useState(false);
+
+  // Load role on client-side only to prevent SSR hydration mismatch
+  useEffect(() => {
+    setRole(getRole() || "");
+    setMounted(true);
+  }, []);
 
   const handleLogout = () => {
     clearAuth();
@@ -30,7 +40,9 @@ export default function AdminLayout({
     { href: "/admin/disasters", label: "灾害管理", roles: ["admin", "operator"] },
   ];
 
-  const visibleItems = navItems.filter((item) => item.roles.includes(role));
+  const visibleItems = mounted
+    ? navItems.filter((item) => item.roles.includes(role))
+    : [];
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -38,7 +50,9 @@ export default function AdminLayout({
       <aside className={`${sidebarOpen ? "block" : "hidden"} md:block w-64 bg-gray-900 text-white flex-shrink-0`}>
         <div className="p-4 border-b border-gray-700">
           <h2 className="text-lg font-bold">应急调度中心</h2>
-          <p className="text-xs text-gray-400 mt-1">角色: {role}</p>
+          <p className="text-xs text-gray-400 mt-1" suppressHydrationWarning>
+            角色: {mounted ? role : "..."}
+          </p>
         </div>
         <nav className="p-2 space-y-1">
           {visibleItems.map((item) => (
