@@ -10,7 +10,7 @@ INSERT INTO users (id, username, password_hash, display_name, role, credit_score
 VALUES (
   '00000000-0000-0000-0000-000000000001',
   'admin',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',  -- bcrypt('admin123')
+  '$2a$10$LmUJ0FG/n4FbL2akXeRLR.rrMcyWj68trG33yAKxocuIDhgJWsaxq',  -- bcrypt('admin123')
   '系统管理员',
   'admin',
   100.0,
@@ -24,7 +24,7 @@ INSERT INTO users (id, username, password_hash, display_name, role, credit_score
 VALUES (
   '00000000-0000-0000-0000-000000000002',
   'commander',
-  '$2a$10$8DfKQX9BXzjqPhDpFJRKMe7nOB3YNRW/QNTB9mNcRIkTFTBvBIMeS',  -- bcrypt('123456')
+  '$2a$10$qbKEOcq3gr0bhKdS8A7XPOhlUSL.IEMspdGF2XqPFQrkyBIB5j5Z.',  -- bcrypt('123456')
   '张指挥',
   'commander',
   100.0,
@@ -38,7 +38,7 @@ INSERT INTO users (id, username, password_hash, display_name, role, credit_score
 VALUES (
   '00000000-0000-0000-0000-000000000003',
   'reviewer',
-  '$2a$10$8DfKQX9BXzjqPhDpFJRKMe7nOB3YNRW/QNTB9mNcRIkTFTBvBIMeS',
+  '$2a$10$qbKEOcq3gr0bhKdS8A7XPOhlUSL.IEMspdGF2XqPFQrkyBIB5j5Z.',
   '李审核',
   'reviewer',
   100.0,
@@ -66,7 +66,7 @@ INSERT INTO users (id, username, password_hash, display_name, role, credit_score
 VALUES (
   '00000000-0000-0000-0000-000000000005',
   'victim1',
-  '$2a$10$8DfKQX9BXzjqPhDpFJRKMe7nOB3YNRW/QNTB9mNcRIkTFTBvBIMeS',
+  '$2a$10$qbKEOcq3gr0bhKdS8A7XPOhlUSL.IEMspdGF2XqPFQrkyBIB5j5Z.',
   '王群众',
   'victim',
   100.0,
