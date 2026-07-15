@@ -192,6 +192,9 @@ go.work.sum
 # env file
 .env
 
+# dc-center backend binary
+backend/server
+
 ### Node
 # Dependencies
 node_modules/
