@@ -3,15 +3,27 @@
   themes: light --default, dark --prefersdark;
 }
 
-/* daisyUI 的 --border 会漏 1px 黑线, 整体重置 */
+/* daisyUI + TW4 border fix: TW4 preflight sets border:1px solid currentColor
+   on input/select/textarea, creating a visible ring around daisyUI components.
+   This reset removes the preflight border so daisyUI's own border styling takes over. */
 @layer base {
-  input, select, textarea {
-    border-color: var(--color-base-300, #e2e8f0);
+  input:where([type]),
+  select,
+  textarea {
+    border-style: solid;
+    border-color: color-mix(in oklab, var(--color-base-content) 20%, transparent);
   }
 
-  select {
-    --tw-border-opacity: 1;
-    border-color: var(--color-base-300);
+  /* Focus ring: use primary color instead of black */
+  input:focus,
+  select:focus,
+  textarea:focus,
+  .input:focus-within,
+  .select:focus-within,
+  .textarea:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 20%, transparent);
+    outline: none;
   }
 }
 
