@@ -3,37 +3,34 @@
 import { useRouter } from "next/navigation";
 import { clearAuth } from "@/lib/auth";
 
-export default function TeamLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function TeamLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
-  const handleLogout = () => {
-    clearAuth();
-    router.push("/login");
-  };
-
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      <header className="bg-red-600 text-white p-4 flex justify-between items-center">
+    <div className="flex flex-col min-h-screen bg-base-200">
+      <header className="bg-error text-error-content p-4 flex justify-between items-center">
         <h1 className="text-lg font-bold">救援任务</h1>
-        <button onClick={handleLogout} className="text-sm text-red-100 hover:text-white">
+        <button onClick={() => { clearAuth(); router.push("/login"); }}
+                className="btn btn-ghost btn-sm">
           退出
         </button>
       </header>
       <main className="flex-1 p-4 pb-20">{children}</main>
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t z-10">
-        <div className="flex justify-around max-w-lg mx-auto">
-          <a href="/team/tasks" className="flex flex-col items-center py-2 px-4 text-red-600 min-h-[44px] justify-center">
-            <span className="text-xs mt-1">任务</span>
-          </a>
-          <a href="/team/map" className="flex flex-col items-center py-2 px-4 text-gray-500 min-h-[44px] justify-center">
-            <span className="text-xs mt-1">地图</span>
-          </a>
-        </div>
-      </nav>
+
+      <div className="btm-nav bg-base-100">
+        <a href="/team/tasks" className="text-primary active">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+          <span className="btm-nav-label">任务</span>
+        </a>
+        <a href="/team/map" className="text-base-content/60">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 16.382V5.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+          </svg>
+          <span className="btm-nav-label">地图</span>
+        </a>
+      </div>
     </div>
   );
 }
