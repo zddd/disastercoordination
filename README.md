@@ -1,85 +1,275 @@
-# 灾害应急调度系统 (Disaster Coordination Center)
+# 灾害应急调度中心 (Disaster Coordination Center)
 
 > 连接受灾群众与救援力量 — 从求助上报到救援完成的全链路开放平台
 
-## 技术栈
+---
 
-| 层级 | 技术 |
+## 项目背景
+
+### 为什么需要这个系统
+
+**灾害是持续发生的，不是偶尔的。** 2019-2026 年间，中国经历了长宁/泸定/积石山地震、长江淮河/郑州7·20/京津冀洪涝、超强台风利奇马/摩羯、响水爆炸/长沙自建房倒塌等重大灾害。2024 年全国自然灾害造成 **9413 万人次受灾**，直接经济损失超 **3000 亿元**。
+
+每次灾害后，救助环节都面临同样的结构性困境：
+
+| 痛点 | 表现 |
 |------|------|
-| 后端 | Go 1.22 + Gin + PostgreSQL 16 + PostGIS |
-| 前端 | React 18 + Next.js 14 + TypeScript + Tailwind CSS |
-| 缓存 | Redis 7 (MVP可选) |
-| 存储 | MinIO (文件) |
-| 部署 | Docker Compose + Coolify |
+| **求助信息高度分散** | 求救信息散落在微信/微博/QQ/抖音，无法统一收拢和响应 |
+| **协作工具效率低下** | 在线文档做"救命文档"是创举，但全员编辑混乱，不适合任务调度 |
+| **指挥缺乏全局视角** | 分散信息难以纳入统筹，灾情态势掌握片面、模糊 |
+| **每次重头开始** | 每场新灾情，组织动员从零开始，经验无法复用 |
+
+### 系统定位
+
+构建一套 **开放、可复用、全链路** 的灾害应急调度系统，连接三个核心要素：
+
+```
+需要救助的人 ←→ 救援力量（救援队/志愿者） ←→ 物资资源
+```
+
+灾害发生后，受灾群众通过 H5 页面一键求救 → 系统 AI 预审 + 人工审核 → 指挥员通过看板调度救援队 → 救援队接单出发施救 → 全程状态可追踪。
+
+---
+
+## MVP 功能 (v0.1.0)
+
+MVP 覆盖一次典型灾害的完整求助→调度→完成闭环：
+
+| 模块 | 功能 | 状态 |
+|------|------|------|
+| **受灾群众端** (H5) | 一键求救 SOS、按灾害类型提交求助、GPS 自动定位、上传现场照片、实时状态追踪 | ✅ |
+| **指挥看板** | 核心指标面板、调度池地图+列表、批量分派救援队、超时告警 | ✅ |
+| **审核工作台** | AI 预审（相似度/异常坐标/刷量/敏感词）、人工审核通过/驳回/合并 | ✅ |
+| **任务管理** | 任务状态机（分配→接单→前往→到达→施救→完成）、拒单/增援、状态历史 | ✅ |
+| **救援队管理** | 注册审核、能力标签、位置上报、民间救援力量标识 | ✅ |
+| **灾害管理** | 创建/关闭灾害、灾情总结报告 | ✅ |
+
+---
 
 ## 快速开始
 
-### 本地开发
+### 环境要求
+
+| 工具 | 最低版本 | 安装方式 |
+|------|---------|---------|
+| Go | 1.22+ | `brew install go` 或 [go.dev/dl](https://go.dev/dl) |
+| Node.js | 20+ | `nvm install 20` |
+| Docker Desktop | 任意 | [docker.com](https://www.docker.com/products/docker-desktop) |
+
+### 一键启动
 
 ```bash
-# 1. 启动基础设施
-docker compose up -d postgres minio
+# 开发模式（自动建表 + 插入演示账号）
+./scripts/start.sh
 
-# 2. 初始化数据库
-docker exec -i dc-postgres psql -U dc_user -d dc_center < backend/migrations/001_init.sql
+# 生产模式（不插入演示账号）
+./scripts/start.sh --prod
 
-# 3. 启动后端
-cd backend
-go run cmd/server/main.go
-# → http://localhost:8080
-
-# 4. 启动前端 (另一个终端)
-cd frontend
-npm install && npm run dev
-# → http://localhost:3000
+# 停止 / 重启
+./scripts/start.sh stop
+./scripts/start.sh restart
 ```
 
-### Docker 一键部署
+### 手动启动
 
 ```bash
-docker compose up -d
-# 前端: http://localhost:3000
-# 后端: http://localhost:8080
-# 健康检查: curl http://localhost:8080/health
+# 1. 启动数据库
+docker compose up -d postgres
+
+# 2. 启动后端
+cd backend && go run cmd/server/main.go
+
+# 3. 启动前端（新终端）
+cd frontend && npm run dev
 ```
 
-### Coolify 部署
+访问 **http://localhost:3000/login**，使用演示账号登录。
 
-1. 在 Coolify Dashboard 创建两个 Service
-2. Backend: Dockerfile 路径 `backend/Dockerfile`，端口 8080
-3. Frontend: Dockerfile 路径 `frontend/Dockerfile`，端口 3000
-4. 环境变量在 Coolify Web UI 中配置
+### 演示账号
 
-## API 文档
+| 用户名 | 密码 | 角色 | 跳转页面 |
+|--------|------|------|---------|
+| `admin` | `admin123` | 管理员 | 管理后台 |
+| `commander` | `123456` | 指挥员 | 指挥看板 |
+| `reviewer` | `123456` | 审核员 | 审核工作台 |
+| `bluesky` | `123456` | 救援队 | 任务列表 |
+| `victim1` | `123456` | 受灾群众 | 求助页面 |
 
-详见 [docs/api.md](docs/api.md)
+> ⚠️ **注意**：演示账号仅在开发模式（`APP_ENV` 不为 `production`）下自动创建。生产环境需运维人员手动注册第一个管理员。
+
+---
+
+## 使用流程
+
+### 完整救援流程
+
+```
+1. 管理员 → 创建灾害实例（灾害管理页）
+2. 受灾群众 → 访问 /help/submit，选择灾害，一键求救或填写表单提交
+3. 系统 → AI 自动预审（标记异常坐标/重复/敏感词）
+4. 审核员 → 审核工作台，审核通过/驳回求助
+5. 指挥员 → 指挥看板，查看调度池，指派救援队
+6. 救援队 → 接单 → 出发 → 到达 → 开始施救 → 完成
+7. 受灾群众 → 通过求助编号实时追踪救援进度
+8. 指挥员 → 灾情结束后关闭灾害，生成总结报告
+```
+
+### 各角色操作指南
+
+**受灾群众**：
+- 打开 `/help/submit` → 选择当前灾害 → 选择求助类型 → 点击"提交求助"
+- 紧急情况直接点击"一键求救 SOS"，无需填写任何信息
+- 记录返回的求助编号，可在 `/help` 页输入编号查看进度
+
+**指挥员**：
+- 登录后进入指挥看板 → 选择活跃灾害
+- 查看核心指标、调度池列表
+- 将求助分派给合适的救援队
+
+**审核员**：
+- 登录后进入审核工作台
+- 查看 AI 标记的问题求助（异常坐标、重复、敏感内容）
+- 审核通过 → 求助进入调度池；驳回 → 该求助不再展示
+
+**救援队**：
+- 登录后进入任务列表
+- 查看分配给本队的任务
+- 按"接单→出发→到达→施救→完成"更新任务状态
+
+---
+
+## 技术架构
+
+| 层级 | 技术选型 | 说明 |
+|------|---------|------|
+| 后端 | Go 1.22 + Gin | RESTful API，单体架构（可扩展微服务） |
+| 数据库 | PostgreSQL 16 + PostGIS | 7 张核心表，空间索引支持地理围栏/距离计算 |
+| 前端 | React 18 + Next.js 14 | App Router，按角色分路由，H5 + Web 管理后台 |
+| UI | Tailwind CSS + daisyUI | 浅天蓝色主题，响应式适配移动端/桌面端 |
+| 缓存 | Redis 7 (MVP 可选) | MVP 阶段 PostgreSQL 承担全部；完整版接入 Redis |
+| 存储 | MinIO | 求助现场照片/视频，S3 兼容 API |
+| 部署 | Docker Compose + Coolify | 单机部署 MVP，可平滑演进到 K8s |
+
+---
 
 ## 项目结构
 
 ```
-├── backend/          # Go + Gin API 服务
-│   ├── cmd/server/   # 入口
-│   ├── internal/     # handler/service/repository/middleware/model/worker
-│   ├── migrations/   # SQL 迁移
-│   └── pkg/push/     # 推送接口
-├── frontend/         # Next.js 前端
-│   └── src/app/      # /help (H5) + /admin (后台) + /team (救援队)
-├── docs/             # 项目文档
-├── docker-compose.yml
-└── .gitignore
+├── backend/               # Go + Gin API 服务
+│   ├── cmd/server/        # 入口，依赖注入
+│   ├── internal/
+│   │   ├── handler/       # HTTP 请求处理
+│   │   ├── service/       # 业务逻辑
+│   │   ├── repository/    # 数据访问
+│   │   ├── middleware/     # JWT/CORS/RBAC/日志
+│   │   ├── model/         # 数据模型、状态机
+│   │   ├── worker/        # 后台 Worker (AI预审、超时告警、归档)
+│   │   └── config/        # 配置管理
+│   ├── migrations/        # SQL 迁移 + 种子数据
+│   └── pkg/push/          # 多平台推送接口
+├── frontend/              # React + Next.js 前端
+│   └── src/app/
+│       ├── admin/         # 管理后台 (指挥看板、审核台等)
+│       ├── help/          # H5 求助端 (提交、追踪)
+│       ├── team/          # 救援队端 (任务管理)
+│       └── login/         # 登录页
+├── docs/                  # API 文档等
+├── scripts/               # 运维脚本
+│   └── start.sh           # 一键启动/重启/停止
+├── docker-compose.yml     # Docker 编排
+└── requirements/          # 需求 + 方案 + 任务 (内部开发文档)
 ```
 
-## 环境变量
+---
 
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| DATABASE_URL | postgres://dc_user:dc_pass@localhost:5432/dc_center | PG连接串 |
-| REDIS_URL | (空=不使用Redis) | Redis连接串 |
-| JWT_SECRET | dc-center-mvp-... | JWT签名密钥 |
-| PORT | 8080 | 后端端口 |
-| UPLOAD_DIR | ./uploads | 文件存储目录 |
+## 隐私与安全
 
-## 测试
+### 坐标位置偏移
+
+系统对求助者的 GPS 坐标应用 **50-200 米随机偏移**。公开地图上显示偏移后的位置，精确坐标仅对已接单的救援队和指挥员可见。
+
+### 信息可见性控制
+
+| 信息 | 受灾群众 | 救援队(已接单) | 指挥员/审核员 | 志愿者/捐赠者 |
+|------|---------|-------------|-------------|------------|
+| 求助描述 | ✅ | ✅ | ✅ | ✅ |
+| GPS (偏移后) | ✅ | ✅ | ✅ | ✅ |
+| GPS (精确) | - | ✅ | ✅ | - |
+| 手机号 | 仅自己 | ✅ | ✅ | 脱敏 |
+| 现场照片 | ✅ | ✅ | ✅ | - |
+
+### 上传安全
+
+- 文件类型白名单（仅允许图片/视频/音频）
+- Magic Bytes 校验真实类型（不信任 Content-Type）
+- UUID 重命名存储（原始文件名永不暴露）
+- 单文件 ≤10MB，IP 频率限制 30次/分钟
+
+---
+
+## Roadmap
+
+### 已完成 ✅ (MVP v0.1.0)
+
+- 受灾群众：一键求救 + 分类求助 + 状态追踪
+- 指挥员：看板 + 调度池 + 任务分配
+- 审核员：审核工作台 + AI 预审规则
+- 救援队：任务接收 + 状态流转
+- 基础设施：Docker 部署 + 自动迁移 + 种子数据
+
+### 规划中 📋 (完整版 v0.2.0+)
+
+| 功能 | 说明 |
+|------|------|
+| 预警推送对接 | 接入微信/QQ/短信/语音电话多平台推送 |
+| 智能分派建议 | 基于位置、能力、负载的算法推荐 |
+| 物资管理系统 | 仓库→入库→出库→调拨→签收全链路 |
+| 志愿者模块 | 技能标签、附近求助认领 |
+| 募捐模块 | 捐款捐物、资金流向透明 |
+| 分区指挥 | 按行政区划分区独立调度 |
+| 预案管理 | 灾害类型→预案模板一键激活 |
+| K8s 部署 | Docker Compose → Kubernetes 集群 |
+| 监控体系 | Prometheus + Grafana + Loki |
+
+---
+
+## 常见问题
+
+### Q: 启动后登录页可以输入，但点击登录没反应？
+
+检查后端是否正常启动：`curl http://localhost:8080/health`。如果返回 `db_ok: false`，说明 PostgreSQL 没启动，运行 `docker compose up -d postgres`。
+
+### Q: 创建灾害后求助页面看不到灾害？
+
+检查 `/disasters/active` 是否需要登录（已修复为公开接口），重启后端确保路由生效。
+
+### Q: 管理后台数据加载为空？
+
+确保已登录。管理后台所有 API 需要 JWT token。登录后浏览器 Cookie 中会存储 token，`authFetch` 自动携带。
+
+### Q: 文件上传报错？
+
+- 检查文件类型是否在白名单内（JPEG/PNG/WebP/MP4/MP3/WAV）
+- 单个文件不超过 10MB
+- 同一 IP 每分钟不超过 30 次上传
+
+### Q: 如何重置所有数据？
+
+```bash
+docker compose down -v    # 删除数据卷
+docker compose up -d       # 重新创建
+./scripts/start.sh --reset # 或使用脚本
+```
+
+### Q: 如何添加新灾害？
+
+管理员登录 → 灾害管理 → 点击"+ 创建灾害" → 填写名称/类型/等级。创建后受灾群众即可在求助页面选择该灾害。
+
+---
+
+## 开发
+
+### 运行测试
 
 ```bash
 # 后端全部测试
@@ -91,3 +281,21 @@ go test ./... -cover
 # 前端构建验证
 cd frontend && npm run build
 ```
+
+### 提交规范
+
+遵循 [Conventional Commits](https://www.conventionalcommits.org/)：
+- `feat(T3): 求助上报API` — 新功能
+- `fix(ui): 修复侧边栏SSR hydration` — Bug修复
+- `chore: 更新依赖` — 杂项
+
+### 分支策略
+
+- `feature/mvp` — MVP 开发主分支
+- `feature/REQ-001` — 需求开发分支
+
+---
+
+## 许可证
+
+MIT License — 详见 [LICENSE](LICENSE)
