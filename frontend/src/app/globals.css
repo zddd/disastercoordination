@@ -3,35 +3,22 @@
   themes: light --default, dark --prefersdark;
 }
 
-/* daisyUI + TW4 border & outline fix.
-   daisyUI's .input:focus sets outline:2px solid var(--input-color)
-   which renders as a dark ring. Override with primary color. */
-@layer base {
-  /* Override daisyUI's focus outline — must match daisyUI's specific selector */
+/* daisyUI's focus outline override.
+   daisyUI uses compound :is() selectors with higher specificity.
+   Must be in @layer utilities to win over daisyUI's @layer base rules. */
+@layer utilities {
   .input:focus,
   .input:focus-within,
-  .select:focus,
-  .select:focus-within,
+  :is(.select:focus, .select:focus-within, .select:open),
   .textarea:focus,
   .textarea:focus-within {
-    outline-color: var(--color-primary);
-    outline-offset: 2px;
+    outline-color: var(--color-primary) !important;
   }
 
-  /* Global form field base border color */
-  input:where([type]),
-  select,
-  textarea {
-    border-color: color-mix(in oklab, var(--color-base-content) 20%, transparent);
-  }
-
-  /* Focus ring: make it match primary for all native inputs too */
-  input:where([type]):focus,
+  input:focus,
   select:focus,
   textarea:focus {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-    border-color: var(--color-primary);
+    outline-color: var(--color-primary) !important;
   }
 }
 
