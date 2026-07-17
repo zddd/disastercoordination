@@ -7,10 +7,19 @@
     dim, nord, sunset, caramellatte, silk, abyss;
 }
 
-/* Custom primary color override for all themes */
+/* Custom primary color + readable badge content overrides.
+   daisyUI light theme defaults some content-colors to dark tones,
+   making badge text unreadable against colored backgrounds. */
 @theme inline {
   --color-primary: #60a5fa;
   --color-primary-content: #ffffff;
+  --color-error-content: #ffffff;
+  --color-success-content: #ffffff;
+  --color-warning-content: #ffffff;
+  --color-info-content: #ffffff;
+  --color-secondary-content: #ffffff;
+  --color-accent-content: #ffffff;
+  --color-neutral-content: #ffffff;
   --font-sans: system-ui, -apple-system, sans-serif;
   --font-mono: ui-monospace, monospace;
 }
