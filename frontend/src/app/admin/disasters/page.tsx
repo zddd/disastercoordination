@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { authFetch } from "@/lib/fetch";
+import { LEVEL_MAP, LEVEL_OPTIONS, TYPE_MAP } from "@/lib/disaster";
 
 interface Disaster { id: string; name: string; type: string; level: string; status: string; started_at: string; }
-const TYPE_LABELS: Record<string, string> = { earthquake: "地震", flood: "洪涝", typhoon: "台风", epidemic: "疫情", other: "其他" };
-const LEVEL_BADGES: Record<string, string> = { red: "badge-error", orange: "badge-warning", yellow: "badge-info", blue: "badge-ghost" };
 
 export default function DisastersPage() {
   const [disasters, setDisasters] = useState<Disaster[]>([]);
@@ -37,14 +36,13 @@ export default function DisastersPage() {
               <div className="form-control">
                 <label className="label"><span className="label-text">灾害类型</span></label>
                 <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="select select-bordered w-full">
-                  {Object.entries(TYPE_LABELS).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
+                  {Object.entries(TYPE_MAP).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
               </div>
               <div className="form-control">
-                <label className="label"><span className="label-text">等级</span></label>
+                <label className="label"><span className="label-text">响应等级</span></label>
                 <select value={form.level} onChange={e => setForm({...form, level: e.target.value})} className="select select-bordered w-full">
-                  <option value="red">🔴 红色</option><option value="orange">🟠 橙色</option>
-                  <option value="yellow">🟡 黄色</option><option value="blue">🔵 蓝色</option>
+                  {LEVEL_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
             </div>
@@ -84,32 +82,42 @@ export default function DisastersPage() {
           <table className="table table-sm">
             <thead>
               <tr>
-                <th>灾害名称</th><th>类型</th><th>等级</th><th>状态</th><th>开始时间</th><th></th>
+                <th>灾害名称</th><th>类型</th><th>响应等级</th><th>状态</th><th>开始时间</th><th></th>
               </tr>
             </thead>
             <tbody>
-              {disasters.map(d => (
-                <tr key={d.id} className="hover">
-                  <td className="font-medium">{d.name}</td>
-                  <td className="text-base-content/60">{TYPE_LABELS[d.type] || d.type}</td>
-                  <td><span className={`badge badge-sm ${LEVEL_BADGES[d.level] || "badge-ghost"}`}>{d.level}</span></td>
-                  <td>
-                    {d.status === "active" ? (
-                      <span className="badge badge-success badge-sm gap-1"><span className="w-1.5 h-1.5 rounded-full bg-success-content" />活跃</span>
-                    ) : d.status === "closed" ? (
-                      <span className="badge badge-ghost badge-sm">已关闭</span>
-                    ) : (
-                      <span className="badge badge-sm">{d.status}</span>
-                    )}
-                  </td>
-                  <td className="text-base-content/40 text-xs">{new Date(d.started_at).toLocaleString("zh-CN")}</td>
-                  <td>
-                    {d.status === "active" && (
-                      <button onClick={() => setCloseConfirm(d.id)} className="btn btn-ghost btn-xs">关闭</button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {disasters.map(d => {
+                const levelInfo = LEVEL_MAP[d.level];
+                return (
+                  <tr key={d.id} className="hover">
+                    <td className="font-semibold text-base-content">{d.name}</td>
+                    <td className="text-base-content/80">{TYPE_MAP[d.type] || d.type}</td>
+                    <td>
+                      <span className={`badge badge-sm font-medium ${levelInfo?.badge || "badge-ghost"}`}>
+                        {levelInfo?.label || d.level}
+                      </span>
+                    </td>
+                    <td>
+                      {d.status === "active" ? (
+                        <span className="badge badge-success badge-sm font-medium text-success-content gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-success-content opacity-70" />
+                          进行中
+                        </span>
+                      ) : d.status === "closed" ? (
+                        <span className="badge badge-ghost badge-sm">已结束</span>
+                      ) : (
+                        <span className="badge badge-sm">{d.status}</span>
+                      )}
+                    </td>
+                    <td className="text-base-content/70 text-xs">{new Date(d.started_at).toLocaleString("zh-CN")}</td>
+                    <td>
+                      {d.status === "active" && (
+                        <button onClick={() => setCloseConfirm(d.id)} className="btn btn-ghost btn-xs">关闭</button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           {disasters.length === 0 && (

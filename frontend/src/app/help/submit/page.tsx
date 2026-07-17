@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { LEVEL_MAP, TYPE_MAP } from "@/lib/disaster";
 
 const CATEGORIES: Record<string, { value: string; label: string }[]> = {
   earthquake: [{value:"trapped",label:"被困"},{value:"injured",label:"受伤"},{value:"collapse",label:"倒塌"},{value:"missing",label:"失联"}],
@@ -119,7 +120,7 @@ export default function HelpSubmitPage() {
                     className="select select-bordered w-full">
               <option value="">-- 请选择灾害 --</option>
               {disasters.map(d => (
-                <option key={d.id} value={d.id}>{d.name} · {d.type} · {d.level}</option>
+                <option key={d.id} value={d.id}>{d.name} · {TYPE_MAP[d.type] || d.type} · {LEVEL_MAP[d.level]?.label || d.level}</option>
               ))}
             </select>
           </div>

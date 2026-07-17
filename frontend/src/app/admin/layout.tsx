@@ -78,8 +78,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Sidebar drawer */}
       <div className="drawer-side z-20">
         <label htmlFor="admin-drawer" aria-label="close sidebar" className="drawer-overlay"></label>
-        <div className="sidebar w-64 min-h-full flex flex-col resize-x overflow-auto"
+        <div className="sidebar w-64 min-h-full flex flex-col relative"
              style={{ minWidth: "180px", maxWidth: "400px" }}>
+          {/* Resize handle — visible drag grip on right edge center */}
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-16 bg-base-300 hover:bg-primary cursor-col-resize rounded-full transition-colors"
+               style={{ cursor: "col-resize" }}
+               onMouseDown={(e) => {
+                 const sidebar = e.currentTarget.parentElement!;
+                 const startX = e.clientX;
+                 const startWidth = sidebar.offsetWidth;
+                 const onMove = (ev: MouseEvent) => {
+                   const newWidth = startWidth + (ev.clientX - startX);
+                   if (newWidth >= 180 && newWidth <= 400) {
+                     sidebar.style.width = newWidth + "px";
+                   }
+                 };
+                 const onUp = () => { document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); };
+                 document.addEventListener("mousemove", onMove);
+                 document.addEventListener("mouseup", onUp);
+               }} />
           {/* Sidebar header */}
           <header className="p-5">
             <div className="flex items-center gap-3 mb-1">
@@ -94,7 +111,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </header>
 
           {/* Navigation menu — daisyUI menu component */}
-          <ul className="menu menu-lg flex-1 w-full p-2 gap-0.5">
+          <ul className="menu flex-1 w-full px-3 py-2 gap-0.5 text-sm">
             {visibleItems.map(item => (
               <li key={item.href} className="w-full">
                 <a href={item.href} className="rounded-lg">{item.label}</a>
