@@ -1,13 +1,12 @@
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: light --default, dark, cupcake, bumblebee, emerald, corporate,
+  themes: light, dark, cupcake, bumblebee, emerald, corporate --default,
     synthwave, retro, cyberpunk, valentine, halloween, garden, forest,
     aqua, lofi, pastel, fantasy, wireframe, black, luxury, dracula,
     cmyk, autumn, business, acid, lemonade, night, coffee, winter,
     dim, nord, sunset, caramellatte, silk, abyss;
 }
 
-/* Custom primary color */
 @theme inline {
   --color-primary: #60a5fa;
   --color-primary-content: #ffffff;
@@ -15,20 +14,13 @@
   --font-mono: ui-monospace, monospace;
 }
 
-/* Badge text: daisyUI theme variables override @theme inline,
-   so we must force via CSS rules. */
 @layer utilities {
-  .badge-error,
-  .badge-success,
-  .badge-warning,
-  .badge-info,
-  .badge-secondary,
-  .badge-accent {
+  .badge-error, .badge-success, .badge-warning,
+  .badge-info, .badge-secondary, .badge-accent {
     color: #ffffff !important;
   }
 }
 
-/* Sidebar */
 .sidebar {
   background: color-mix(in oklab, var(--color-base-100) 95%, var(--color-base-content));
   color: var(--color-base-content);

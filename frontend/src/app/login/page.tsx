@@ -30,7 +30,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="hero min-h-screen bg-base-200">
+    <div data-theme="corporate" className="hero min-h-screen bg-base-200">
       <div className="hero-content w-full max-w-sm">
         <div className="card bg-base-100 shadow-xl w-full">
           <div className="card-body items-center text-center gap-4">
