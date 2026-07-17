@@ -38,7 +38,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main content area */}
       <div className="drawer-content flex flex-col min-h-screen bg-base-200">
         {/* Navbar */}
-        <div className="navbar bg-base-100 shadow-sm sticky top-0 z-10 lg:hidden">
+        <div className="navbar bg-base-100 shadow-sm sticky top-0 z-10">
           <div className="navbar-start">
             <label htmlFor="admin-drawer" className="btn btn-ghost drawer-button lg:hidden">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -109,7 +109,7 @@ export default function DisastersPage() {
                         <span className="badge badge-sm">{d.status}</span>
                       )}
                     </td>
-                    <td className="text-base-content/90 text-sm">{new Date(d.started_at).toLocaleString("zh-CN")}</td>
+                    <td className="text-base-content font-medium">{new Date(d.started_at).toLocaleString("zh-CN")}</td>
                     <td>
                       {d.status === "active" && (
                         <button onClick={() => setCloseConfirm(d.id)} className="btn btn-outline btn-error btn-xs">关闭</button>
