@@ -1,27 +1,19 @@
-/**
- * StatCard — dashboard metric display component.
- * Shows a large number with label and optional color accent.
- */
-export function StatCard({
-  label,
-  value,
-  color = "red",
-}: {
-  label: string;
-  value: number | string;
-  color?: "red" | "green" | "yellow" | "gray";
+export function StatCard({ label, value, color = "primary" }: {
+  label: string; value: number | string;
+  color?: "primary" | "success" | "warning" | "error" | "ghost";
 }) {
   const colorClasses: Record<string, string> = {
-    red: "bg-primary/10 text-primary border-primary/20",
-    green: "bg-green-50 text-green-700 border-green-200",
-    yellow: "bg-amber-50 text-amber-700 border-amber-200",
-    gray: "bg-slate-50 text-slate-500 border-slate-200",
+    primary: "border-primary/20",
+    success: "border-success/20",
+    warning: "border-warning/20",
+    error: "border-error/20",
+    ghost: "border-base-300",
   };
 
   return (
-    <div className={`rounded-lg border p-3 text-center ${colorClasses[color]}`}>
-      <p className="text-2xl font-bold">{value}</p>
-      <p className="text-xs mt-1">{label}</p>
+    <div className={`stat bg-base-100 rounded-box shadow-sm border ${colorClasses[color] || "border-base-300"}`}>
+      <div className="stat-value">{value}</div>
+      <div className="stat-title">{label}</div>
     </div>
   );
 }

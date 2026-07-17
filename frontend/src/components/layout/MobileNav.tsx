@@ -1,34 +1,17 @@
 "use client";
-
 import { usePathname } from "next/navigation";
-
-const navItems = [
-  { href: "/help", label: "求助", icon: "🔴" },
-  { href: "/help/status", label: "进度", icon: "✅" },
-];
 
 export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-10 md:hidden">
-      <div className="flex justify-around max-w-lg mx-auto">
-        {navItems.map((item) => {
-          const active = pathname === item.href;
-          return (
-            <a
-              key={item.href}
-              href={item.href}
-              className={`flex flex-col items-center py-2 px-4 min-h-[44px] justify-center ${
-                active ? "text-primary" : "text-base-content/60"
-              }`}
-            >
-              <span className="text-lg">{item.icon}</span>
-              <span className="text-xs mt-1">{item.label}</span>
-            </a>
-          );
-        })}
-      </div>
-    </nav>
+    <div className="btm-nav bg-base-100 md:hidden">
+      <a href="/help" className={pathname === "/help" ? "active text-primary" : "text-base-content/60"}>
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span className="btm-nav-label">求助</span>
+      </a>
+    </div>
   );
 }

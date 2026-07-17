@@ -78,7 +78,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Sidebar drawer */}
       <div className="drawer-side z-20">
         <label htmlFor="admin-drawer" aria-label="close sidebar" className="drawer-overlay"></label>
-        <div className="sidebar w-64 min-h-full flex flex-col">
+        <div className="sidebar w-64 min-h-full flex flex-col resize-x overflow-auto"
+             style={{ minWidth: "180px", maxWidth: "400px" }}>
           {/* Sidebar header */}
           <header className="p-5">
             <div className="flex items-center gap-3 mb-1">
@@ -92,11 +93,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
           </header>
 
-          {/* Navigation menu */}
-          <ul className="menu flex-1 px-3 gap-1 text-sm">
+          {/* Navigation menu — daisyUI menu component */}
+          <ul className="menu menu-lg flex-1 w-full p-2 gap-0.5">
             {visibleItems.map(item => (
-              <li key={item.href}>
-                <a href={item.href}>{item.label}</a>
+              <li key={item.href} className="w-full">
+                <a href={item.href} className="rounded-lg">{item.label}</a>
               </li>
             ))}
           </ul>
