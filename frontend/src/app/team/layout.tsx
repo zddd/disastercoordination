@@ -8,15 +8,22 @@ export default function TeamLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="flex flex-col min-h-screen bg-base-200">
-      <header className="bg-primary text-primary-content p-4 flex justify-between items-center">
-        <h1 className="text-lg font-bold">救援任务</h1>
-        <button onClick={() => { clearAuth(); router.push("/login"); }}
-                className="btn btn-ghost btn-sm">
-          退出
-        </button>
-      </header>
+      {/* Navbar */}
+      <div className="navbar bg-primary text-primary-content shadow-sm">
+        <div className="navbar-start">
+          <h1 className="text-lg font-bold">救援任务</h1>
+        </div>
+        <div className="navbar-end">
+          <button onClick={() => { clearAuth(); router.push("/login"); }}
+                  className="btn btn-ghost btn-sm text-primary-content">
+            退出
+          </button>
+        </div>
+      </div>
+
       <main className="flex-1 p-4 pb-20">{children}</main>
 
+      {/* Bottom Navigation */}
       <div className="btm-nav bg-base-100">
         <a href="/team/tasks" className="text-primary active">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

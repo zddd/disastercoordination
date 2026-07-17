@@ -22,40 +22,86 @@ export default function ReviewPage() {
     await authFetch(`/reviews/${id}/reject`, { method: "POST", body: JSON.stringify({ reason }) }); fetchQueue();
   };
 
+  if (loading) return (
+    <div className="space-y-4">
+      <h1 className="text-2xl font-bold">审核工作台</h1>
+      {[1,2,3].map(i => (
+        <div key={i} className="card bg-base-100 shadow-sm">
+          <div className="card-body p-4">
+            <div className="skeleton h-4 w-1/3 mb-2" />
+            <div className="skeleton h-4 w-2/3 mb-2" />
+            <div className="skeleton h-4 w-1/2" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
-    <div className="space-y-5">
-      <h1 className="text-2xl font-bold">审核工作台<span className="text-base-content/50 text-base ml-2">{queue.length}</span></h1>
-      {loading && <div className="flex gap-2 items-center text-sm text-base-content/40"><span className="loading loading-spinner loading-xs" />加载中...</div>}
-      <div className="space-y-3">
-        {queue.map(item => {
-          const overdue = item.waiting_minutes > item.sla_minutes;
-          return (
-            <div key={item.help_id} className={`card bg-base-100 shadow-sm border-l-4 ${overdue ? "border-l-error" : "border-l-primary"}`}>
-              <div className="card-body p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium">{item.category}</span>
-                      <span className={`badge badge-xs ${item.urgency==="critical"?"badge-error":"badge-ghost"}`}>{item.urgency==="critical"?"紧急":"一般"}</span>
-                      {overdue && <span className="badge badge-error badge-xs animate-pulse">超时</span>}
-                    </div>
-                    <p className="text-sm text-base-content/60 line-clamp-2">{item.description}</p>
-                    <div className="flex gap-3 mt-2 text-xs text-base-content/40">
-                      <span>{Math.round(item.waiting_minutes)}min / SLA {item.sla_minutes}min</span>
-                      {item.ai_flags?.length ? <span className="text-warning">AI: {item.ai_flags.join(", ")}</span> : null}
-                    </div>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold">审核工作台</h1>
+        <span className="badge badge-lg">{queue.length}</span>
+      </div>
+
+      {queue.map(item => {
+        const overdue = item.waiting_minutes > item.sla_minutes;
+        return (
+          <div key={item.help_id}
+               className={`card bg-base-100 shadow-sm border-s-4 ${overdue ? "border-s-error" : "border-s-primary"}`}>
+            <div className="card-body p-4">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                <div className="flex-1 space-y-1.5">
+                  {/* Header */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold">{item.category}</span>
+                    <span className={`badge badge-sm ${item.urgency==="critical"?"badge-error":"badge-ghost"}`}>
+                      {item.urgency==="critical"?"紧急":"一般"}
+                    </span>
+                    {overdue && <span className="badge badge-error badge-sm animate-pulse">超时</span>}
+                    {item.ai_flags?.length ? (
+                      <div className="dropdown dropdown-hover">
+                        <div tabIndex={0} className="badge badge-warning badge-sm cursor-pointer">AI标记</div>
+                        <div tabIndex={0} className="dropdown-content card card-compact bg-base-100 shadow-md p-3 z-10 w-48 mt-1">
+                          <ul className="text-xs space-y-1">
+                            {item.ai_flags.map((f,i) => <li key={i} className="text-warning">• {f}</li>)}
+                          </ul>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
-                  <div className="flex gap-2 ml-4">
-                    <button onClick={() => approve(item.help_id)} className="btn btn-primary btn-xs">通过</button>
-                    <button onClick={() => reject(item.help_id)} className="btn btn-xs btn-outline">驳回</button>
+
+                  {/* Description */}
+                  <p className="text-sm text-base-content/60 line-clamp-2">{item.description}</p>
+
+                  {/* SLA Info */}
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-base-content/40">
+                    <div className="tooltip" data-tip={`目标 ${item.sla_minutes} 分钟内完成审核`}>
+                      <span>⏱ {Math.round(item.waiting_minutes)} / {item.sla_minutes} 分钟</span>
+                    </div>
+                    {overdue && (
+                      <progress className="progress progress-error w-24 h-2" value={Math.min(100, (item.waiting_minutes / item.sla_minutes) * 100)} max={100} />
+                    )}
                   </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 sm:flex-col shrink-0">
+                  <button onClick={() => approve(item.help_id)} className="btn btn-primary btn-sm">通过</button>
+                  <button onClick={() => reject(item.help_id)} className="btn btn-ghost btn-sm">驳回</button>
                 </div>
               </div>
             </div>
-          );
-        })}
-        {!loading && queue.length === 0 && <p className="text-center text-base-content/40 py-8">暂无待审核求助</p>}
-      </div>
+          </div>
+        );
+      })}
+
+      {queue.length === 0 && (
+        <div className="text-center text-base-content/40 py-12">
+          <div className="text-4xl mb-2">🎉</div>
+          <p>暂无待审核求助</p>
+        </div>
+      )}
     </div>
   );
 }

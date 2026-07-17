@@ -1,8 +1,9 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { authFetch } from "@/lib/fetch";
 
-interface PoolItem { help_id: string; category: string; urgency: string; description: string; waiting_minutes: number; is_isolated: boolean; }
+interface PoolItem { help_id: string; category: string; urgency: string; description: string; waiting_minutes: number; is_isolated: boolean; nearby_teams?: { team_id: string; name: string; distance_m: number }[]; }
 
 export default function DashboardPage() {
   const [disasters, setDisasters] = useState<{id:string;name:string}[]>([]);
@@ -25,51 +26,75 @@ export default function DashboardPage() {
     });
   }, [disasterId]);
 
-  const statItems = [
-    { label:"求助总数", value:stats.total, className:"bg-blue-50 text-blue-700" },
-    { label:"紧急待处理", value:stats.critical, className:"bg-primary/10 text-primary border-primary/20" },
-    { label:"一般", value:stats.normal, className:"bg-amber-50 text-amber-700" },
-    { label:"轻微", value:stats.mild, className:"bg-slate-50 text-slate-500" },
-  ];
-
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4">
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h1 className="text-2xl font-bold">指挥看板</h1>
         <select value={disasterId} onChange={e => setDisasterId(e.target.value)}
-                className="select select-bordered select-sm w-64">
+                className="select select-bordered select-sm w-full sm:w-64">
           {disasters.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {statItems.map(s => (
-          <div key={s.label} className="stat rounded-box bg-base-100 shadow-sm border border-base-300">
-            <div className="stat-value text-2xl">{s.value}</div>
-            <div className="stat-title text-xs">{s.label}</div>
-          </div>
-        ))}
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="stat bg-base-100 rounded-box shadow-sm border border-base-300">
+          <div className="stat-title">求助总数</div>
+          <div className="stat-value text-primary">{stats.total}</div>
+        </div>
+        <div className="stat bg-base-100 rounded-box shadow-sm border border-base-300">
+          <div className="stat-title">紧急待处理</div>
+          <div className="stat-value text-error">{stats.critical}</div>
+          <div className="stat-desc">⚠️ 需立即处理</div>
+        </div>
+        <div className="stat bg-base-100 rounded-box shadow-sm border border-base-300">
+          <div className="stat-title">一般</div>
+          <div className="stat-value text-warning">{stats.normal}</div>
+        </div>
+        <div className="stat bg-base-100 rounded-box shadow-sm border border-base-300">
+          <div className="stat-title">轻微</div>
+          <div className="stat-value">{stats.mild}</div>
+        </div>
       </div>
 
+      {/* Dispatch Pool */}
       <div className="card bg-base-100 shadow-sm">
         <div className="card-body">
-          <h2 className="card-title text-base">调度池 ({pool.length})</h2>
+          <h2 className="card-title text-base">
+            调度池
+            <div className="badge badge-primary ml-2">{pool.length}</div>
+          </h2>
+
           <div className="space-y-2 mt-2">
             {pool.slice(0, 15).map(item => (
-              <div key={item.help_id} className="flex items-center justify-between p-3 bg-base-200 rounded-lg text-sm">
+              <div key={item.help_id}
+                   className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-base-200 rounded-lg text-sm">
                 <div className="flex items-center gap-3">
-                  <span className={`w-2 h-2 rounded-full ${item.urgency==="critical"?"bg-primary":"bg-warning"}`} />
+                  <span className={`w-2 h-2 rounded-full ${item.urgency==="critical"?"bg-error":"bg-warning"}`} />
                   <span className="font-medium">{item.category}</span>
-                  <span className="text-base-content/50 truncate max-w-[200px]">{item.description}</span>
+                  <span className="badge badge-sm badge-ghost">{item.urgency==="critical"?"紧急":"一般"}</span>
+                  <span className="text-base-content/50 line-clamp-1 hidden sm:inline">{item.description}</span>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-base-content/40">
-                  <span className="badge badge-ghost badge-xs">{Math.round(item.waiting_minutes)}分钟</span>
+                <div className="flex items-center gap-3 text-xs text-base-content/40 ml-5 sm:ml-0">
+                  <span>{Math.round(item.waiting_minutes)} 分钟</span>
                   {item.is_isolated && <span className="badge badge-warning badge-xs">孤立上报</span>}
+                  {item.nearby_teams && item.nearby_teams.length > 0 && (
+                    <div className="tooltip" data-tip={item.nearby_teams.map(t => `${t.name} (${Math.round(t.distance_m)}m)`).join("\n")}>
+                      <span className="badge badge-info badge-xs">{item.nearby_teams.length} 队伍</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
-            {pool.length === 0 && <p className="text-center text-base-content/40 py-8">调度池为空</p>}
           </div>
+
+          {pool.length === 0 && (
+            <div className="text-center text-base-content/40 py-8">
+              <p>调度池为空</p>
+              <p className="text-xs mt-1">审核通过的求助会自动出现在这里</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
