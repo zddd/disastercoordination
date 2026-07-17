@@ -79,26 +79,41 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="drawer-side z-20">
         <label htmlFor="admin-drawer" aria-label="close sidebar" className="drawer-overlay"></label>
         <div className="sidebar w-64 min-h-full flex flex-col">
-          <div className="p-5 border-b border-white/10">
-            <h2 className="text-lg font-bold tracking-wide">应急调度中心</h2>
-            <p className="text-xs text-white/50 mt-1">角色: {mounted ? role : "..."}</p>
-          </div>
-          <ul className="menu flex-1 p-3 gap-1">
+          {/* Sidebar header */}
+          <header className="p-5">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <span className="text-primary-content text-sm font-bold">DC</span>
+              </div>
+              <div>
+                <h2 className="font-bold text-sm leading-tight">应急调度中心</h2>
+                <p className="text-xs opacity-60">v0.1.0 MVP</p>
+              </div>
+            </div>
+          </header>
+
+          {/* Navigation menu */}
+          <ul className="menu flex-1 px-3 gap-1 text-sm">
             {visibleItems.map(item => (
               <li key={item.href}>
-                <a href={item.href} className="text-white/85 hover:text-white hover:bg-white/10 focus:bg-white/10">
-                  <span>{item.icon}</span>
-                  {item.label}
-                </a>
+                <a href={item.href}>{item.label}</a>
               </li>
             ))}
           </ul>
-          <div className="p-3 border-t border-white/10">
+
+          {/* Sidebar footer */}
+          <footer className="p-3">
+            <div className="flex items-center gap-2 px-3 py-2 text-xs opacity-60">
+              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-primary text-xs font-bold">{mounted ? role?.charAt(0)?.toUpperCase() : "?"}</span>
+              </div>
+              <span>{mounted ? role : "..."}</span>
+            </div>
             <button onClick={() => { clearAuth(); router.push("/login"); }}
-                    className="btn btn-ghost w-full text-white/50 hover:text-white hover:bg-white/10 btn-sm justify-start normal-case">
-              ⏻ 退出登录
+                    className="btn btn-ghost w-full justify-start btn-sm text-xs normal-case opacity-60 hover:opacity-100">
+              退出登录
             </button>
-          </div>
+          </footer>
         </div>
       </div>
     </div>
