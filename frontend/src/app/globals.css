@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: bumblebee --default, cupcake;
+  themes: light --default, cupcake;
 }
 
 /* ============================================================
@@ -36,8 +36,12 @@
   --color-base-content: #334155;
   --color-info: #60a5fa;
   --color-success: #34d399;
+  --color-success-content: #ffffff;
   --color-warning: #fbbf24;
+  --color-warning-content: #ffffff;
   --color-error: #f87171;
+  --color-error-content: #ffffff;
+  --color-info-content: #ffffff;
   --border: 1px;
   --font-sans: system-ui, -apple-system, sans-serif;
   --font-mono: ui-monospace, monospace;
@@ -66,6 +70,10 @@
 .sidebar ul.menu a.active {
   background: color-mix(in oklab, var(--color-primary) 15%, transparent);
   color: var(--color-primary);
+}
+
+.sidebar ul.menu a.active {
+  color: var(--color-primary) !important;
 }
 
 /* Sidebar footer */

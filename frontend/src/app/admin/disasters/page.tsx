@@ -47,7 +47,7 @@ export default function DisastersPage() {
               </div>
             </div>
             <div className="modal-action">
-              <button onClick={() => setShowCreate(false)} className="btn btn-ghost btn-sm">取消</button>
+              <button onClick={() => setShowCreate(false)} className="btn btn-sm">取消</button>
               <button onClick={async () => {
                 await authFetch("/disasters", { method: "POST", body: JSON.stringify(form) });
                 setShowCreate(false); load();
@@ -65,11 +65,11 @@ export default function DisastersPage() {
             <h3 className="font-bold text-lg mb-2">确认关闭灾害</h3>
             <p className="text-sm text-base-content/60 mb-4">关闭后求助入口将停止接收该灾害的求助。此操作不可撤销。</p>
             <div className="modal-action">
-              <button onClick={() => setCloseConfirm(null)} className="btn btn-ghost btn-sm">取消</button>
+              <button onClick={() => setCloseConfirm(null)} className="btn btn-sm">取消</button>
               <button onClick={async () => {
                 await authFetch(`/disasters/${closeConfirm}/close`, { method: "PUT" });
                 setCloseConfirm(null); load();
-              }} className="btn btn-warning btn-sm">确认关闭</button>
+              }} className="btn btn-error btn-sm">确认关闭</button>
             </div>
           </div>
           <div className="modal-backdrop" onClick={() => setCloseConfirm(null)} />
@@ -91,7 +91,7 @@ export default function DisastersPage() {
                 return (
                   <tr key={d.id} className="hover">
                     <td className="font-semibold text-base-content">{d.name}</td>
-                    <td className="text-base-content/80">{TYPE_MAP[d.type] || d.type}</td>
+                    <td className="text-base-content font-medium">{TYPE_MAP[d.type] || d.type}</td>
                     <td>
                       <span className={`badge badge-sm font-medium ${levelInfo?.badge || "badge-ghost"}`}>
                         {levelInfo?.label || d.level}
@@ -109,10 +109,10 @@ export default function DisastersPage() {
                         <span className="badge badge-sm">{d.status}</span>
                       )}
                     </td>
-                    <td className="text-base-content/70 text-xs">{new Date(d.started_at).toLocaleString("zh-CN")}</td>
+                    <td className="text-base-content text-xs">{new Date(d.started_at).toLocaleString("zh-CN")}</td>
                     <td>
                       {d.status === "active" && (
-                        <button onClick={() => setCloseConfirm(d.id)} className="btn btn-ghost btn-xs">关闭</button>
+                        <button onClick={() => setCloseConfirm(d.id)} className="btn btn-outline btn-error btn-xs">关闭</button>
                       )}
                     </td>
                   </tr>

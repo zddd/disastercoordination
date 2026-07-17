@@ -75,7 +75,7 @@ export default function TeamsPage() {
               </div>
             </div>
             <div className="modal-action">
-              <button onClick={() => setRegisterOpen(false)} className="btn btn-ghost btn-sm">取消</button>
+              <button onClick={() => setRegisterOpen(false)} className="btn btn-sm">取消</button>
               <button onClick={handleRegister} className="btn btn-primary btn-sm" disabled={!regForm.name || !regForm.phone}>注册</button>
             </div>
           </div>
@@ -106,7 +106,7 @@ export default function TeamsPage() {
                 {!team.verified && team.status==="pending" && (
                   <div className="flex gap-1">
                     <button onClick={() => verify(team.id)} className="btn btn-primary btn-xs">通过</button>
-                    <button onClick={() => reject(team.id)} className="btn btn-ghost btn-xs">拒绝</button>
+                    <button onClick={() => reject(team.id)} className="btn btn-outline btn-xs">拒绝</button>
                   </div>
                 )}
               </div>

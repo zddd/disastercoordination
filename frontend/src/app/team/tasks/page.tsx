@@ -53,7 +53,7 @@ export default function TeamTasksPage() {
                 )}
                 {task.status==="rescuing" && (
                   <button onClick={() => updateStatus(task.id, "unable")}
-                          className="btn btn-ghost btn-sm flex-1">无法完成</button>
+                          className="btn btn-outline btn-sm flex-1">无法完成</button>
                 )}
               </div>
             </div>

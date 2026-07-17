@@ -128,7 +128,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <span>{mounted ? role : "..."}</span>
             </div>
             <button onClick={() => { clearAuth(); router.push("/login"); }}
-                    className="btn btn-ghost w-full justify-start btn-sm text-xs normal-case opacity-60 hover:opacity-100">
+                    className="btn btn-ghost w-full justify-start btn-sm text-xs normal-case">
               退出登录
             </button>
           </footer>
