@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { clearAuth, getRole } from "@/lib/auth";
+import ThemeSwitcher from "@/components/ui/ThemeSwitcher";
 
 const ALL_ITEMS = [
   { href: "/admin/dashboard", label: "指挥看板", icon: "📊", roles: ["admin", "commander", "zone_commander"] },
@@ -46,7 +47,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </label>
           </div>
           <div className="navbar-center font-bold text-sm">{pageTitle}</div>
-          <div className="navbar-end">
+          <div className="navbar-end gap-1">
+            <ThemeSwitcher />
             <div className="dropdown dropdown-end">
               <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar placeholder">
                 <div className="bg-primary text-primary-content w-10 rounded-full">
