@@ -20,10 +20,19 @@ func NewTaskHandler(svc service.TaskService) *TaskHandler {
 }
 
 // ListMine handles GET /api/v1/tasks/mine — list tasks for the current team.
+// For rescue_team users, uses the user's team_id (link to rescue_teams table).
+// For other roles, uses the user_id as team_id (admin/commander view all tasks).
 func (h *TaskHandler) ListMine(c *gin.Context) {
 	teamID := c.Query("team_id")
+	role := middleware.GetRoleFromContext(c)
 	if teamID == "" {
-		teamID = middleware.GetUserIDFromContext(c)
+		// For rescue_team users, use team_id from their user profile
+		if role == "rescue_team" {
+			teamID = c.GetString("user_team_id")
+		}
+		if teamID == "" {
+			teamID = middleware.GetUserIDFromContext(c)
+		}
 	}
 	status := c.Query("status")
 

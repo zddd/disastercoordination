@@ -102,7 +102,7 @@ func (s *authService) Login(ctx context.Context, username, password string) (*Lo
 	}
 
 	// Generate JWT token
-	token, err := middleware.GenerateToken(user.ID, string(user.Role), s.jwtSecret)
+	token, err := middleware.GenerateToken(user.ID, string(user.Role), user.TeamID, s.jwtSecret)
 	if err != nil {
 		return nil, fmt.Errorf("token generation failed: %w", err)
 	}

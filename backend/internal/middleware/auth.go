@@ -36,6 +36,7 @@ func Auth(secret string) gin.HandlerFunc {
 		// Extract user info from JWT claims
 		userID, _ := claims["sub"].(string)
 		role, _ := claims["role"].(string)
+		teamID, _ := claims["team_id"].(string)
 
 		if userID == "" || role == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token missing required claims"})
@@ -44,6 +45,7 @@ func Auth(secret string) gin.HandlerFunc {
 
 		c.Set("user_id", userID)
 		c.Set("user_role", role)
+		c.Set("user_team_id", teamID)
 		c.Next()
 	}
 }

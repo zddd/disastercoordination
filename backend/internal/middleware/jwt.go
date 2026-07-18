@@ -13,13 +13,17 @@ const (
 
 // GenerateToken creates a JWT token for a given user with role claims.
 // The token contains: sub (user_id), role, iat (issued at), exp (expires at).
-func GenerateToken(userID, role string, secret string) (string, error) {
+// For rescue_team users, also includes team_id claim for task lookup.
+func GenerateToken(userID, role, teamID string, secret string) (string, error) {
 	now := time.Now()
 	claims := jwt.MapClaims{
 		"sub":  userID,
 		"role": role,
 		"iat":  now.Unix(),
 		"exp":  now.Add(TokenExpiry).Unix(),
+	}
+	if teamID != "" {
+		claims["team_id"] = teamID
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

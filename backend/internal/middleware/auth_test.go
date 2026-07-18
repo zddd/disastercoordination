@@ -14,7 +14,7 @@ func init() {
 
 func TestAuth_ValidToken(t *testing.T) {
 	secret := "test-secret-12345"
-	token, err := GenerateToken("user-001", "rescue_team", secret)
+	token, err := GenerateToken("user-001", "rescue_team", "", secret)
 	if err != nil {
 		t.Fatalf("failed to generate token: %v", err)
 	}

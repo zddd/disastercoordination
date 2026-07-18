@@ -48,13 +48,14 @@ VALUES (
 -- ============================================================
 -- Rescue team accounts (password: 123456)
 -- ============================================================
-INSERT INTO users (id, username, password_hash, display_name, role, credit_score, status)
+INSERT INTO users (id, username, password_hash, display_name, role, team_id, credit_score, status)
 VALUES (
   '00000000-0000-0000-0000-000000000004',
   'bluesky',
   '$2a$10$GkuhmZizt50umv4vMbKM6ef0lj19QANXRiFTxOEl5vake7C41F.La',
   '蓝天救援队',
   'rescue_team',
+  '00000000-0000-0000-0000-000000000010',  -- Links to rescue_teams(id)
   100.0,
   'active'
 ) ON CONFLICT (username) DO NOTHING;

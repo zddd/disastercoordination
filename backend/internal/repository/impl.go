@@ -668,19 +668,20 @@ func (r *userPostgresRepo) GetByID(ctx context.Context, id string) (*model.User,
 }
 
 func (r *userPostgresRepo) GetByUsername(ctx context.Context, username string) (*model.User, error) {
-	query := `SELECT id, username, password_hash, phone, role, credit_score, status, created_at, updated_at
+	query := `SELECT id, username, password_hash, phone, role, team_id, credit_score, status, created_at, updated_at
 			  FROM users WHERE username = $1`
 
 	u := &model.User{}
-	var phone sql.NullString
+	var phone, teamID sql.NullString
 	err := r.db.QueryRowContext(ctx, query, username).Scan(
-		&u.ID, &u.Username, &u.PasswordHash, &phone, &u.Role, &u.CreditScore,
+		&u.ID, &u.Username, &u.PasswordHash, &phone, &u.Role, &teamID, &u.CreditScore,
 		&u.Status, &u.CreatedAt, &u.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
 	}
 	u.Phone = phone.String
+	u.TeamID = teamID.String
 	return u, nil
 }
 

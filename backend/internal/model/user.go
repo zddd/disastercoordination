@@ -11,6 +11,7 @@ type User struct {
 	PasswordHash string    `json:"-"` // Never expose in API responses
 	Phone        string    `json:"phone,omitempty"`
 	Role         Role      `json:"role"`
+	TeamID       string    `json:"team_id,omitempty"` // Link to rescue_teams for rescue_team role
 	CreditScore  float64   `json:"credit_score"`
 	Status       string    `json:"status"` // active, suspended
 	CreatedAt    time.Time `json:"created_at"`
