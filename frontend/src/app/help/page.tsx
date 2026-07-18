@@ -2,51 +2,54 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { authFetch } from "@/lib/fetch";
-import { isAuthenticated } from "@/lib/auth";
+import { getHelpHistory, HelpHistoryEntry } from "@/lib/help-history";
 
-// HelpItem mirrors the backend help request response (reduced fields for list view)
-interface HelpItem {
-  id: string;
-  disaster_id: string;
-  category: string;
-  urgency: string;
-  description: string;
+// StatusInfo from the public status endpoint (GET /api/v1/helps/:id/status)
+interface StatusInfo {
+  help_id: string;
   status: string;
   review_status: string;
-  created_at: string;
+  progress_description: string;
+  estimated_minutes: number;
 }
 
 export default function HelpHomePage() {
-  const [helps, setHelps] = useState<HelpItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [history, setHistory] = useState<(HelpHistoryEntry & { status?: StatusInfo })[]>([]);
+  const [loadingStatus, setLoadingStatus] = useState(false);
 
-  // Check if user is authenticated on mount
+  // Load history from localStorage on mount
   useEffect(() => {
-    setLoggedIn(isAuthenticated());
+    const entries = getHelpHistory();
+    console.info("[help] loaded history from localStorage", { count: entries.length });
+    setHistory(entries);
+
+    // For entries that have a help_id, fetch their current status via public API
+    if (entries.length > 0) {
+      setLoadingStatus(true);
+      Promise.all(
+        entries.map(async (entry) => {
+          try {
+            const res = await fetch(`http://localhost:8080/api/v1/helps/${entry.help_id}/status`);
+            if (res.ok) {
+              const data: StatusInfo = await res.json();
+              return { ...entry, status: data };
+            }
+          } catch (err) {
+            console.warn("[help] failed to fetch status for", entry.help_id);
+          }
+          return entry;
+        })
+      ).then(results => {
+        setHistory(results);
+      }).finally(() => {
+        setLoadingStatus(false);
+      });
+    }
   }, []);
 
-  // Load user's help requests if authenticated
-  useEffect(() => {
-    if (!loggedIn) return;
-    setLoading(true);
-    authFetch("/helps/mine")
-      .then(r => r.json())
-      .then(data => {
-        const list = data.helps || [];
-        console.info("[help] loaded user help requests", { count: list.length });
-        setHelps(list);
-      })
-      .catch(err => {
-        console.error("[help] failed to load help list", { error: String(err) });
-      })
-      .finally(() => setLoading(false));
-  }, [loggedIn]);
-
   // Helper: Chinese label for help status
-  const statusLabel = (status: string) => {
-    switch (status) {
+  const statusLabel = (s: string) => {
+    switch (s) {
       case "pending_review": return "待审核";
       case "reviewed": case "in_pool": return "已审核";
       case "assigned": return "已分配";
@@ -57,22 +60,19 @@ export default function HelpHomePage() {
       case "completed": return "已完成";
       case "unable": return "无法完成";
       case "need_backup": return "请求增援";
-      default: return status;
+      default: return s || "未知";
     }
   };
 
   // Helper: badge color for status
-  const statusBadgeClass = (status: string) => {
-    switch (status) {
+  const statusBadgeClass = (s: string) => {
+    switch (s) {
       case "pending_review": return "badge-warning";
       case "completed": return "badge-success";
       case "unable": case "need_backup": return "badge-error";
       default: return "badge-info";
     }
   };
-
-  // Helper: Chinese label for urgency
-  const urgencyLabel = (u: string) => u === "critical" ? "紧急" : u === "normal" ? "一般" : "轻微";
 
   return (
     <div className="max-w-lg mx-auto p-4 space-y-6 pt-8">
@@ -103,53 +103,44 @@ export default function HelpHomePage() {
           </div>
         </div>
 
-        {/* My Help Requests — shown when user is authenticated */}
-        {loggedIn && (
+        {/* Recent Help Requests — from localStorage, works without login */}
+        {history.length > 0 && (
           <div className="space-y-3">
             <h2 className="text-base font-bold flex items-center gap-2">
-              我的求助记录
-              {!loading && <span className="badge badge-sm">{helps.length}</span>}
+              最近求助记录
+              {loadingStatus && <span className="loading loading-spinner loading-xs" />}
             </h2>
 
-            {loading && (
-              <div className="flex justify-center py-8">
-                <span className="loading loading-spinner loading-md text-primary" />
-              </div>
-            )}
-
-            {!loading && helps.length === 0 && (
-              <div className="text-center text-base-content/40 py-4">
-                <p className="text-sm">暂无求助记录</p>
-                <p className="text-xs mt-1">发起求助后可在此查看进度</p>
-              </div>
-            )}
-
-            {!loading && helps.map(help => (
-              <Link key={help.id} href={`/help/${help.id}/status`}
+            {history.map(entry => (
+              <Link key={entry.help_id} href={`/help/${entry.help_id}/status`}
                     className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow block">
                 <div className="card-body p-3">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-medium text-sm truncate">{help.category}</span>
-                      <span className={`badge badge-xs ${help.urgency === "critical" ? "badge-error" : "badge-ghost"}`}>
-                        {urgencyLabel(help.urgency)}
-                      </span>
+                    <div className="min-w-0">
+                      <p className="font-mono text-xs text-base-content/50 truncate">{entry.help_id}</p>
                     </div>
-                    <span className={`badge badge-xs ${statusBadgeClass(help.status)}`}>
-                      {statusLabel(help.status)}
-                    </span>
+                    {entry.status && (
+                      <span className={`badge badge-xs ${statusBadgeClass(entry.status.status)}`}>
+                        {statusLabel(entry.status.status)}
+                      </span>
+                    )}
+                    {!entry.status && (
+                      <span className="badge badge-xs badge-ghost">获取中...</span>
+                    )}
                   </div>
-                  <p className="text-xs text-base-content/50 line-clamp-1 mt-1">{help.description}</p>
-                  <p className="text-xs text-base-content/40 mt-0.5">{new Date(help.created_at).toLocaleString("zh-CN")}</p>
+                  {entry.status && (
+                    <p className="text-xs text-base-content/60 mt-1">{entry.status.progress_description}</p>
+                  )}
+                  <p className="text-xs text-base-content/40 mt-0.5">{new Date(entry.created_at).toLocaleString("zh-CN")}</p>
                 </div>
               </Link>
             ))}
           </div>
         )}
 
-        {!loggedIn && (
-          <div className="text-center text-xs text-base-content/40">
-            <Link href="/login" className="link link-hover">登录</Link>后可查看求助记录
+        {history.length === 0 && (
+          <div className="text-center text-xs text-base-content/40 py-2">
+            提交求助后，记录会自动保存在此设备上
           </div>
         )}
       </div>

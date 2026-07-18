@@ -15,6 +15,9 @@ export default function TeamsPage() {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
   const [regForm, setRegForm] = useState({ name:"", type:"registered", capabilities:"" as string, phone:"", person:"", members:0 });
+  // Filter state
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   // Detail modal state
   const [detailTeam, setDetailTeam] = useState<Team | null>(null);
 
@@ -135,12 +138,55 @@ export default function TeamsPage() {
     return "badge-outline";
   };
 
+  // Client-side filtering: search by name, phone, capabilities + status select
+  const filteredTeams = teams.filter(t => {
+    if (statusFilter !== "all" && t.status !== statusFilter) return false;
+    if (statusFilter === "verified" && !t.verified) return false;
+    if (statusFilter === "unverified" && t.verified) return false;
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      t.name.toLowerCase().includes(q) ||
+      t.contact_phone.includes(q) ||
+      t.capabilities?.some(c => c.toLowerCase().includes(q))
+    );
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">救援队管理</h1>
         <button onClick={() => { setError(""); setRegisterOpen(true); }} className="btn btn-primary btn-sm">+ 注册救援队</button>
       </div>
+
+      {/* Filter bar: search + status filter */}
+      {!loading && teams.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            placeholder="搜索队伍名称、电话或能力标签..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="input input-bordered input-sm flex-1"
+          />
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            className="select select-bordered select-sm"
+          >
+            <option value="all">全部状态</option>
+            <option value="verified">已认证</option>
+            <option value="unverified">未认证</option>
+            <option value="active">活跃</option>
+            <option value="pending">待审核</option>
+            <option value="rejected">已拒绝</option>
+            <option value="inactive">停用</option>
+          </select>
+          <span className="text-xs text-base-content/40 self-center whitespace-nowrap">
+            显示 {filteredTeams.length} / {teams.length}
+          </span>
+        </div>
+      )}
 
       {/* Error banner — shown when any operation fails */}
       {error && (
@@ -273,7 +319,7 @@ export default function TeamsPage() {
       {/* Team list */}
       {!loading && (
         <div className="grid gap-3 lg:grid-cols-2">
-          {teams.map(team => (
+          {filteredTeams.map(team => (
             <div
               key={team.id}
               className="card bg-base-100 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
@@ -326,6 +372,14 @@ export default function TeamsPage() {
         <div className="text-center text-base-content/40 py-12">
           <p>暂无注册救援队</p>
           <button onClick={() => setRegisterOpen(true)} className="btn btn-link btn-sm mt-1">注册第一支救援队</button>
+        </div>
+      )}
+
+      {/* No search results */}
+      {!loading && teams.length > 0 && filteredTeams.length === 0 && (
+        <div className="text-center text-base-content/40 py-8">
+          <p>没有匹配的救援队</p>
+          <button onClick={() => { setSearch(""); setStatusFilter("all"); }} className="btn btn-link btn-sm mt-1">清除筛选</button>
         </div>
       )}
     </div>

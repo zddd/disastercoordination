@@ -74,7 +74,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ---- Global Stats Grid (from dashboard API) ---- */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <div className="stat bg-base-100 rounded-box shadow-sm border border-base-300 p-3">
           <div className="stat-title text-xs">活跃灾害</div>
           <div className="stat-value text-lg text-error">{dashStats?.active_disasters ?? "-"}</div>
@@ -84,22 +84,21 @@ export default function DashboardPage() {
           <div className="stat-value text-lg text-primary">{dashStats?.total_helps ?? "-"}</div>
         </div>
         <div className="stat bg-base-100 rounded-box shadow-sm border border-base-300 p-3">
-          <div className="stat-title text-xs">救援队伍</div>
-          <div className="stat-value text-lg text-secondary">{dashStats?.total_teams ?? "-"}</div>
-          <div className="stat-desc text-xs">{dashStats?.verified_teams ?? 0} 已认证 {dashStats?.pending_teams ? `· ${dashStats.pending_teams} 待审` : ""}</div>
-        </div>
-        <div className="stat bg-base-100 rounded-box shadow-sm border border-base-300 p-3">
           <div className="stat-title text-xs">救援任务</div>
           <div className="stat-value text-lg text-accent">{dashStats?.total_tasks ?? "-"}</div>
           <div className="stat-desc text-xs">{dashStats?.completed_tasks ?? 0} 已完成</div>
         </div>
         <div className="stat bg-base-100 rounded-box shadow-sm border border-base-300 p-3">
-          <div className="stat-title text-xs">注册 / 民间</div>
-          <div className="stat-value text-lg">{dashStats?.registered_teams ?? "-"} / {dashStats?.civil_teams ?? "-"}</div>
-        </div>
-        <div className="stat bg-base-100 rounded-box shadow-sm border border-base-300 p-3">
           <div className="stat-title text-xs">进行中任务</div>
           <div className="stat-value text-lg text-warning">{dashStats?.in_progress_tasks ?? "-"}</div>
+        </div>
+        <div className="stat bg-base-100 rounded-box shadow-sm border border-base-300 p-3">
+          <div className="stat-title text-xs">救援队伍</div>
+          <div className="stat-value text-lg text-secondary">{dashStats?.total_teams ?? "-"}</div>
+          <div className="stat-desc text-xs">
+            注册{dashStats?.registered_teams ?? 0} · 民间{dashStats?.civil_teams ?? 0}
+            {dashStats?.verified_teams ? ` · ${dashStats.verified_teams} 已认证` : ""}
+          </div>
         </div>
       </div>
 

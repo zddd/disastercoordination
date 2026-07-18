@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LEVEL_MAP, TYPE_MAP } from "@/lib/disaster";
+import { addHelpToHistory } from "@/lib/help-history";
 
 const CATEGORIES: Record<string, { value: string; label: string }[]> = {
   earthquake: [{value:"trapped",label:"被困"},{value:"injured",label:"受伤"},{value:"collapse",label:"倒塌"},{value:"missing",label:"失联"}],
@@ -69,6 +70,7 @@ export default function HelpSubmitPage() {
       const res = await fetch("http://localhost:8080/api/v1/helps", { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "发送失败"); return; }
+      addHelpToHistory(data.help_id);
       router.push(`/help/${data.help_id}/status`);
     } catch (e: any) {
       setError("网络连接失败: " + (e.message || "请检查网络"));
@@ -94,6 +96,7 @@ export default function HelpSubmitPage() {
       const res = await fetch("http://localhost:8080/api/v1/helps", { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "提交失败"); return; }
+      addHelpToHistory(data.help_id);
       router.push(`/help/${data.help_id}/status`);
     } catch (e: any) {
       setError("网络连接失败: " + (e.message || "请重试"));

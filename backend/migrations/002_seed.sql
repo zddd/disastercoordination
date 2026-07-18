@@ -52,7 +52,7 @@ INSERT INTO users (id, username, password_hash, display_name, role, credit_score
 VALUES (
   '00000000-0000-0000-0000-000000000004',
   'bluesky',
-  '$2a$10$8DfKQX9BXzjqPhDpFJRKMe7nOB3YNRW/QNTB9mNcRIkTFTBvBIMeS',
+  '$2a$10$GkuhmZizt50umv4vMbKM6ef0lj19QANXRiFTxOEl5vake7C41F.La',
   '蓝天救援队',
   'rescue_team',
   100.0,
