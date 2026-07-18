@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { authFetch } from "@/lib/fetch";
 
-// HelpDetail mirrors the backend HelpRequest model
 interface HelpDetail {
   id: string;
   disaster_id: string;
@@ -25,6 +24,8 @@ interface HelpDetail {
   reviewed_at?: string;
 }
 
+interface TeamBrief { id: string; name: string; type: string; distance_m?: number; }
+
 export default function AdminHelpDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -32,6 +33,12 @@ export default function AdminHelpDetailPage() {
   const [help, setHelp] = useState<HelpDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Dispatch modal state
+  const [showDispatch, setShowDispatch] = useState(false);
+  const [dispatchTeams, setDispatchTeams] = useState<TeamBrief[]>([]);
+  const [dispatchTeamId, setDispatchTeamId] = useState("");
+  const [dispatchLoading, setDispatchLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -51,11 +58,45 @@ export default function AdminHelpDetailPage() {
       .finally(() => setLoading(false));
   }, [helpId]);
 
-  // Helpers
+  // Load teams when dispatch modal opens
+  const openDispatch = async () => {
+    setShowDispatch(true);
+    setDispatchTeamId("");
+    try {
+      const res = await authFetch("/teams");
+      const data = await res.json();
+      setDispatchTeams((data.teams || []).filter((t: TeamBrief) => t.id));
+    } catch {
+      setDispatchTeams([]);
+    }
+  };
+
+  const handleDispatch = async () => {
+    if (!help || !dispatchTeamId) return;
+    setDispatchLoading(true);
+    try {
+      console.info("[admin-help] dispatching", { help_id: help.id, team_id: dispatchTeamId });
+      await authFetch("/dispatch/assign", {
+        method: "POST",
+        body: JSON.stringify({ help_id: help.id, team_id: dispatchTeamId }),
+      });
+      console.info("[admin-help] dispatch succeeded", { help_id: help.id });
+      setShowDispatch(false);
+      // Reload to get updated status
+      const res = await authFetch(`/helps/${helpId}`);
+      if (res.ok) setHelp(await res.json());
+    } catch (e) {
+      console.error("[admin-help] dispatch failed", { error: String(e) });
+    } finally {
+      setDispatchLoading(false);
+    }
+  };
+
+  // Helper: Chinese labels
   const statusLabel = (s: string) => {
     switch (s) {
       case "pending_review": return "待审核";
-      case "reviewed": case "in_pool": return "审核通过·待调度";
+      case "reviewed": case "in_pool": return "待调度";
       case "assigned": return "已分配";
       case "accepted": return "已接单";
       case "en_route": return "赶往现场";
@@ -111,14 +152,7 @@ export default function AdminHelpDetailPage() {
   if (!help) return null;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4 p-4">
-      {/* Breadcrumb nav */}
-      <div className="flex items-center gap-2 text-sm">
-        <button onClick={() => router.push("/admin/dashboard")} className="link link-hover text-base-content/50">指挥看板</button>
-        <span className="text-base-content/30">/</span>
-        <span className="font-medium">求助 #{help.id.slice(0, 8)}</span>
-      </div>
-
+    <div className="max-w-2xl mx-auto space-y-4">
       {/* Header card */}
       <div className="card bg-base-100 shadow-sm">
         <div className="card-body p-4">
@@ -132,9 +166,17 @@ export default function AdminHelpDetailPage() {
               </div>
               <p className="text-xs text-base-content/50 font-mono">{help.id}</p>
             </div>
-            <span className={`badge badge-sm ${statusBadgeClass(help.status)}`}>
-              {statusLabel(help.status)}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className={`badge badge-sm ${statusBadgeClass(help.status)}`}>
+                {statusLabel(help.status)}
+              </span>
+              {/* Show dispatch button only when help is in_pool */}
+              {help.status === "in_pool" && (
+                <button onClick={openDispatch} className="btn btn-primary btn-sm normal-case">
+                  调度救援力量
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -238,6 +280,49 @@ export default function AdminHelpDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Dispatch Modal */}
+      {showDispatch && help && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-md">
+            <h3 className="font-bold text-lg mb-2">调度救援力量</h3>
+            <div className="text-sm space-y-2 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-base-content/50">求助:</span>
+                <span className="font-medium">{categoryLabel(help.category)}</span>
+                <span className={`badge badge-xs ${help.urgency==="critical"?"badge-error":"badge-ghost"}`}>
+                  {help.urgency==="critical"?"紧急":"一般"}
+                </span>
+              </div>
+              <p className="text-xs text-base-content/60">{help.description}</p>
+              <p className="text-xs text-base-content/40">求助 #{help.id.slice(0, 8)}</p>
+            </div>
+
+            <div className="form-control mb-4">
+              <label className="label"><span className="label-text text-sm font-medium">选择救援队</span></label>
+              <select value={dispatchTeamId} onChange={e => setDispatchTeamId(e.target.value)}
+                      className="select select-bordered w-full">
+                <option value="">请选择救援队...</option>
+                {dispatchTeams.map(t => (
+                  <option key={t.id} value={t.id}>
+                    {t.name} ({t.type==="registered"?"注册":"民间"})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="modal-action">
+              <button onClick={() => setShowDispatch(false)} className="btn btn-sm" disabled={dispatchLoading}>取消</button>
+              <button onClick={handleDispatch}
+                      className="btn btn-primary btn-sm"
+                      disabled={!dispatchTeamId || dispatchLoading}>
+                {dispatchLoading ? <><span className="loading loading-spinner loading-xs" /> 调度中...</> : "确认调度"}
+              </button>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={() => setShowDispatch(false)} />
+        </div>
+      )}
     </div>
   );
 }

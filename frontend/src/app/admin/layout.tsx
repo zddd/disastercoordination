@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { clearAuth, getRole } from "@/lib/auth";
 import ThemeSwitcher from "@/components/ui/ThemeSwitcher";
@@ -15,9 +15,11 @@ const ALL_ITEMS = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [role, setRole] = useState("");
   const [mounted, setMounted] = useState(false);
   const [pageTitle, setPageTitle] = useState("");
+  const isSubPage = pathname.startsWith("/admin/help/");
 
   useEffect(() => { setRole(getRole() || ""); setMounted(true); }, []);
 
@@ -44,10 +46,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </label>
+            {/* Back button for sub-pages */}
+            {isSubPage && (
+              <button onClick={() => router.back()}
+                      className="btn btn-ghost btn-xs gap-1 normal-case">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                返回
+              </button>
+            )}
             <div className="breadcrumbs text-xs py-0 hidden lg:flex">
               <ul>
                 <li><a href="/admin/dashboard" className="link link-hover">管理后台</a></li>
-                {pageTitle && <li className="font-medium">{pageTitle}</li>}
+                {isSubPage
+                  ? <li>求助 #{pathname.split("/").pop()?.slice(0, 8)}</li>
+                  : pageTitle && <li className="font-medium">{pageTitle}</li>
+                }
               </ul>
             </div>
           </div>
