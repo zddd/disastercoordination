@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { authFetch } from "@/lib/fetch";
 
 interface Task {
@@ -16,7 +15,8 @@ interface Task {
   _help_description?: string;
   _help_urgency?: string;
   _team_name?: string;
-  _help_status?: string; // Help request status (in_pool/assigned/...) for dispatch button
+  _disaster_name?: string;
+  _help_status?: string;
 }
 
 interface TeamBrief { id: string; name: string; type: string; }
@@ -39,18 +39,23 @@ export default function AdminTasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
   const [disasters, setDisasters] = useState<{id:string;name:string}[]>([]);
+  // Filters: disaster, type, urgency, team, status
   const [disasterFilter, setDisasterFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [urgencyFilter, setUrgencyFilter] = useState("all");
+  const [teamFilter, setTeamFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("");
 
-  // Dispatch modal state
   const [dispatchTask, setDispatchTask] = useState<Task | null>(null);
   const [dispatchTeams, setDispatchTeams] = useState<TeamBrief[]>([]);
   const [dispatchTeamId, setDispatchTeamId] = useState("");
   const [dispatchLoading, setDispatchLoading] = useState(false);
 
   useEffect(() => {
-    authFetch("/disasters").then(r => r.json()).then(d => setDisasters(d.disasters || []));
+    authFetch("/disasters/active").then(r => r.json()).then(d => {
+      setDisasters(d.disasters || []);
+    });
   }, []);
 
   useEffect(() => {
@@ -60,8 +65,10 @@ export default function AdminTasksPage() {
       .then(async (data) => {
         const list: Task[] = data.tasks || [];
         console.info("[tasks] loaded", { count: list.length });
-        // Preload team name cache
+
+        // Build lookup maps
         const teamCache: Record<string, string> = {};
+        const disasterNameMap: Record<string, string> = {};
         try {
           const tRes = await authFetch("/teams");
           if (tRes.ok) {
@@ -69,10 +76,18 @@ export default function AdminTasksPage() {
             (d.teams || []).forEach((t: {id:string;name:string}) => { teamCache[t.id] = t.name; });
           }
         } catch {}
-        // Enrich each task
+        try {
+          const dRes = await authFetch("/disasters/active");
+          if (dRes.ok) {
+            const d = await dRes.json();
+            (d.disasters || []).forEach((ds: {id:string;name:string}) => { disasterNameMap[ds.id] = ds.name; });
+          }
+        } catch {}
+
         const enriched = await Promise.all(list.map(async (task) => {
           const e: Task = { ...task };
           e._team_name = teamCache[task.team_id] || task.team_id.slice(0, 8);
+          e._disaster_name = disasterNameMap[task.disaster_id] || task.disaster_id.slice(0, 8);
           try {
             const hRes = await fetch(`http://localhost:8080/api/v1/helps/${task.help_request_id}/status`);
             if (hRes.ok) {
@@ -91,7 +106,6 @@ export default function AdminTasksPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Dispatch functions
   const openDispatch = async (task: Task) => {
     setDispatchTask(task);
     setDispatchTeamId(task.team_id || "");
@@ -106,12 +120,11 @@ export default function AdminTasksPage() {
     if (!dispatchTask || !dispatchTeamId) return;
     setDispatchLoading(true);
     try {
-      console.info("[tasks] dispatching via task page", { task_id: dispatchTask.id, team_id: dispatchTeamId });
+      console.info("[tasks] dispatching", { task_id: dispatchTask.id, team_id: dispatchTeamId });
       await authFetch("/dispatch/assign", {
         method: "POST",
         body: JSON.stringify({ help_id: dispatchTask.help_request_id, team_id: dispatchTeamId }),
       });
-      // Update local state
       setTasks(prev => prev.map(t => t.id === dispatchTask.id ? { ...t, _help_status: "assigned", team_id: dispatchTeamId, _team_name: dispatchTeams.find(dt => dt.id === dispatchTeamId)?.name || t._team_name } : t));
       setDispatchTask(null);
     } catch (e) {
@@ -119,20 +132,35 @@ export default function AdminTasksPage() {
     } finally { setDispatchLoading(false); }
   };
 
+  // Build team options from data
+  const teamOptions = useMemo(() => {
+    const names = new Set(tasks.map(t => t._team_name).filter(Boolean));
+    return Array.from(names) as string[];
+  }, [tasks]);
+
+  const typeOptions = useMemo(() => {
+    const cats = new Set(tasks.map(t => t._help_category).filter(Boolean));
+    return Array.from(cats) as string[];
+  }, [tasks]);
+
   const filtered = useMemo(() => {
     return tasks.filter(t => {
-      if (statusFilter && t.status !== statusFilter) return false;
       if (disasterFilter !== "all" && t.disaster_id !== disasterFilter) return false;
+      if (typeFilter !== "all" && t._help_category !== typeFilter) return false;
+      if (urgencyFilter !== "all" && t._help_urgency !== urgencyFilter) return false;
+      if (teamFilter !== "all" && t._team_name !== teamFilter) return false;
+      if (statusFilter && t.status !== statusFilter) return false;
       if (!search) return true;
       const q = search.toLowerCase();
       return (
         (CATEGORY_LABELS[t._help_category||""] || t._help_category || "").includes(q) ||
         (t._help_description || "").toLowerCase().includes(q) ||
         (t._team_name || "").toLowerCase().includes(q) ||
+        (t._disaster_name || "").toLowerCase().includes(q) ||
         t.id.toLowerCase().includes(q)
       );
     });
-  }, [tasks, search, statusFilter, disasterFilter]);
+  }, [tasks, search, disasterFilter, typeFilter, urgencyFilter, teamFilter, statusFilter]);
 
   if (loading) return (
     <div className="space-y-4">
@@ -150,38 +178,56 @@ export default function AdminTasksPage() {
         <span className="badge">{tasks.length} 个任务</span>
       </div>
 
-      {/* Filter bar */}
+      {/* Filter bar: disaster, type, urgency, team, status */}
       {tasks.length > 0 && (
-        <div className="flex flex-col sm:flex-row gap-2">
-          <input type="text" placeholder="搜索求助类型/描述/队伍名..." value={search}
+        <div className="flex flex-wrap items-center gap-2">
+          <input type="text" placeholder="搜索..." value={search}
                  onChange={e => setSearch(e.target.value)}
-                 className="input input-bordered input-sm flex-1" />
+                 className="input input-bordered input-sm flex-1 min-w-[100px]" />
           <select value={disasterFilter} onChange={e => setDisasterFilter(e.target.value)}
-                  className="select select-bordered select-sm w-36">
+                  className="select select-bordered select-sm w-28">
             <option value="all">全部灾害</option>
-            {disasters.map(d => <option key={d.id} value={d.id}>{d.name.slice(0,8)}</option>)}
+            {disasters.map(d => <option key={d.id} value={d.id}>{d.name.slice(0,6)}</option>)}
+          </select>
+          <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+                  className="select select-bordered select-sm w-24">
+            <option value="all">全部类型</option>
+            {typeOptions.map(c => <option key={c} value={c}>{CATEGORY_LABELS[c] || c}</option>)}
+          </select>
+          <select value={urgencyFilter} onChange={e => setUrgencyFilter(e.target.value)}
+                  className="select select-bordered select-sm w-24">
+            <option value="all">全部紧急度</option>
+            <option value="critical">紧急</option>
+            <option value="normal">一般</option>
+            <option value="mild">轻微</option>
+          </select>
+          <select value={teamFilter} onChange={e => setTeamFilter(e.target.value)}
+                  className="select select-bordered select-sm w-28">
+            <option value="all">全部队伍</option>
+            {teamOptions.map(n => <option key={n} value={n}>{n?.slice(0,6)}</option>)}
           </select>
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-                  className="select select-bordered select-sm w-28">
+                  className="select select-bordered select-sm w-24">
             <option value="">全部状态</option>
             {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </div>
       )}
 
-      {/* Table — each row is clickable to /admin/tasks/[id] */}
+      {/* Table */}
       <div className="card bg-base-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="table table-sm">
             <thead>
               <tr>
-                <th>求助类型</th><th>紧急度</th><th>求助内容</th><th>救援队伍</th><th>状态</th><th>创建时间</th><th></th>
+                <th>所属灾害</th><th>求助类型</th><th>紧急度</th><th>求助内容</th><th>救援队伍</th><th>状态</th><th>创建时间</th><th></th>
               </tr>
             </thead>
             <tbody>
               {filtered.map(task => (
                 <tr key={task.id} className="hover cursor-pointer"
                     onClick={() => window.location.href = `/admin/tasks/${task.id}`}>
+                  <td className="text-xs badge badge-outline badge-xs">{task._disaster_name?.slice(0,8) || "-"}</td>
                   <td className="font-medium text-sm">
                     {task._help_category ? (CATEGORY_LABELS[task._help_category] || task._help_category) : "-"}
                   </td>
@@ -192,9 +238,9 @@ export default function AdminTasksPage() {
                       </span>
                     ) : "-"}
                   </td>
-                  <td className="text-xs text-base-content/60 line-clamp-1 max-w-[180px]">
-                    {task._help_description?.slice(0, 20) || "-"}
-                    {(task._help_description?.length || 0) > 20 ? "..." : ""}
+                  <td className="text-xs text-base-content/60 line-clamp-1 max-w-[160px]">
+                    {task._help_description?.slice(0, 15) || "-"}
+                    {(task._help_description?.length || 0) > 15 ? "..." : ""}
                   </td>
                   <td className="text-xs">{task._team_name || "-"}</td>
                   <td>
@@ -204,17 +250,12 @@ export default function AdminTasksPage() {
                   </td>
                   <td className="text-xs text-base-content/60">{new Date(task.created_at).toLocaleString("zh-CN")}</td>
                   <td onClick={e => e.stopPropagation()}>
-                    {/* Show dispatch button if help is still in_pool */}
                     {task._help_status === "in_pool" ? (
                       <button onClick={() => openDispatch(task)}
-                              className="btn btn-primary btn-xs normal-case min-h-0 h-6">
-                        调度
-                      </button>
+                              className="btn btn-primary btn-xs normal-case min-h-0 h-6">调度</button>
                     ) : (
                       <button onClick={() => openDispatch(task)}
-                              className="btn btn-outline btn-xs normal-case min-h-0 h-6">
-                        重分
-                      </button>
+                              className="btn btn-outline btn-xs normal-case min-h-0 h-6">重分</button>
                     )}
                   </td>
                 </tr>
@@ -224,13 +265,13 @@ export default function AdminTasksPage() {
           {tasks.length === 0 && (
             <div className="text-center text-base-content/40 py-12">
               <p>暂无任务</p>
-              <p className="text-xs mt-1">分配任务后，任务会出现在此列表中</p>
+              <p className="text-xs mt-1">分配任务后出现在此</p>
             </div>
           )}
           {tasks.length > 0 && filtered.length === 0 && (
             <div className="text-center text-base-content/40 py-8">
               <p>没有匹配的任务</p>
-              <button onClick={() => { setSearch(""); setStatusFilter(""); setDisasterFilter("all"); }}
+              <button onClick={() => { setSearch(""); setDisasterFilter("all"); setTypeFilter("all"); setUrgencyFilter("all"); setTeamFilter("all"); setStatusFilter(""); }}
                       className="btn btn-link btn-sm mt-1">清除筛选</button>
             </div>
           )}

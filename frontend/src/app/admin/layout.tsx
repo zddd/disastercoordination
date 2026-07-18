@@ -19,7 +19,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [role, setRole] = useState("");
   const [mounted, setMounted] = useState(false);
   const [pageTitle, setPageTitle] = useState("");
-  const isSubPage = pathname.startsWith("/admin/help/");
+  const isSubPage = pathname.startsWith("/admin/help/") || (pathname.startsWith("/admin/tasks/") && pathname.split("/").length > 3);
 
   useEffect(() => { setRole(getRole() || ""); setMounted(true); }, []);
 
@@ -60,7 +60,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <ul>
                 <li><a href="/admin/dashboard" className="link link-hover">管理后台</a></li>
                 {isSubPage
-                  ? <li>求助 #{pathname.split("/").pop()?.slice(0, 8)}</li>
+                  ? (pathname.startsWith("/admin/help/")
+                    ? <li>求助 #{pathname.split("/").pop()?.slice(0, 8)}</li>
+                    : <li>任务 #{pathname.split("/").pop()?.slice(0, 8)}</li>)
                   : pageTitle && <li className="font-medium">{pageTitle}</li>
                 }
               </ul>
