@@ -22,9 +22,18 @@ export default function LoginPage() {
       if (!res.ok) { setError((await res.json()).error || "登录失败"); return; }
       const { token, user } = await res.json();
       setAuth(token, user);
-      if (user.role === "victim" || user.role === "volunteer" || user.role === "donor") router.push("/help");
-      else if (user.role === "rescue_team") router.push("/team/tasks");
-      else router.push("/admin/dashboard");
+      // Role-based redirect after login
+      if (user.role === "victim" || user.role === "volunteer" || user.role === "donor") {
+        router.push("/help");
+      } else if (user.role === "rescue_team") {
+        router.push("/team/tasks");
+      } else if (user.role === "reviewer") {
+        // Reviewer's primary workspace is the review queue
+        router.push("/admin/review");
+      } else {
+        // admin, commander, zone_commander, operator go to dashboard
+        router.push("/admin/dashboard");
+      }
     } catch { setError("服务器连接失败"); }
     finally { setLoading(false); }
   };

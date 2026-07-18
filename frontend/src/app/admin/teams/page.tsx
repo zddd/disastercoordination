@@ -5,7 +5,7 @@ import { apiPost } from "@/lib/fetch";
 import { authFetch } from "@/lib/fetch";
 import { clearAuth } from "@/lib/auth";
 
-interface Team { id:string; name:string; type:string; capabilities:string[]; contact_phone:string; member_count:number; status:string; verified:boolean; }
+interface Team { id:string; name:string; type:string; capabilities:string[]; contact_phone:string; contact_person?:string; member_count:number; status:string; verified:boolean; current_lat?:number; current_lng?:number; created_at:string; updated_at?:string; }
 
 export default function TeamsPage() {
   const router = useRouter();
@@ -15,6 +15,8 @@ export default function TeamsPage() {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
   const [regForm, setRegForm] = useState({ name:"", type:"registered", capabilities:"" as string, phone:"", person:"", members:0 });
+  // Detail modal state
+  const [detailTeam, setDetailTeam] = useState<Team | null>(null);
 
   // Load team list from backend.
   // Logs structured info for debugging registration/display issues.
@@ -112,6 +114,27 @@ export default function TeamsPage() {
     }
   };
 
+  // Helper: get a Chinese label for team status
+  const statusLabel = (status: string) => {
+    switch (status) {
+      case "active": return "活跃";
+      case "inactive": return "停用";
+      case "suspended": return "已暂停";
+      case "pending": return "待审核";
+      case "rejected": return "已拒绝";
+      default: return status;
+    }
+  };
+
+  // Helper: get a badge color class based on team status
+  const statusBadgeClass = (status: string, verified: boolean) => {
+    if (verified && status === "active") return "badge-success";
+    if (status === "pending") return "badge-warning";
+    if (status === "rejected") return "badge-error";
+    if (status === "inactive" || status === "suspended") return "badge-ghost";
+    return "badge-outline";
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -176,6 +199,70 @@ export default function TeamsPage() {
         </div>
       )}
 
+      {/* Team Detail Modal — opens when a team card is clicked */}
+      {detailTeam && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-lg">
+            <h3 className="font-bold text-lg mb-4">
+              {detailTeam.name}
+              <span className={`badge badge-sm ml-2 ${detailTeam.type==="registered"?"badge-primary":"badge-ghost"}`}>
+                {detailTeam.type==="registered"?"注册救援队":"民间救援力量"}
+              </span>
+            </h3>
+            <div className="space-y-3">
+              {/* Status row */}
+              <div className="flex flex-wrap gap-2">
+                <span className={`badge badge-sm ${statusBadgeClass(detailTeam.status, detailTeam.verified)}`}>
+                  {statusLabel(detailTeam.status)}
+                </span>
+                {detailTeam.verified && <span className="badge badge-success badge-sm">✓ 已认证</span>}
+              </div>
+              {/* Basic info */}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-base-content/50">联系人</span>
+                  <p>{detailTeam.contact_person || "-"}</p>
+                </div>
+                <div>
+                  <span className="text-base-content/50">联系电话</span>
+                  <p>{detailTeam.contact_phone}</p>
+                </div>
+                <div>
+                  <span className="text-base-content/50">人数</span>
+                  <p>{detailTeam.member_count} 人</p>
+                </div>
+                <div>
+                  <span className="text-base-content/50">注册时间</span>
+                  <p>{detailTeam.created_at ? new Date(detailTeam.created_at).toLocaleString("zh-CN") : "-"}</p>
+                </div>
+              </div>
+              {/* Capabilities */}
+              <div>
+                <span className="text-sm text-base-content/50">能力标签</span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {detailTeam.capabilities?.length
+                    ? detailTeam.capabilities.map(c => <span key={c} className="badge badge-outline badge-xs">{c}</span>)
+                    : <span className="text-xs text-base-content/40">无</span>}
+                </div>
+              </div>
+              {/* GPS position — only if available */}
+              {(detailTeam.current_lat || detailTeam.current_lng) && (
+                <div>
+                  <span className="text-sm text-base-content/50">当前位置</span>
+                  <p className="text-xs text-base-content/60 font-mono">
+                    {detailTeam.current_lat?.toFixed(6)}, {detailTeam.current_lng?.toFixed(6)}
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="modal-action">
+              <button onClick={() => setDetailTeam(null)} className="btn btn-sm">关闭</button>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={() => setDetailTeam(null)} />
+        </div>
+      )}
+
       {/* Loading state */}
       {loading && (
         <div className="flex justify-center py-12">
@@ -187,7 +274,11 @@ export default function TeamsPage() {
       {!loading && (
         <div className="grid gap-3 lg:grid-cols-2">
           {teams.map(team => (
-            <div key={team.id} className="card bg-base-100 shadow-sm">
+            <div
+              key={team.id}
+              className="card bg-base-100 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => setDetailTeam(team)}
+            >
               <div className="card-body p-4">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1.5">
@@ -196,16 +287,30 @@ export default function TeamsPage() {
                       <span className={`badge badge-sm ${team.type==="registered"?"badge-primary":"badge-ghost"}`}>
                         {team.type==="registered"?"注册救援队":"民间救援力量"}
                       </span>
-                      {team.verified && <span className="badge badge-success badge-sm">✓ 已认证</span>}
-                      {!team.verified && team.status==="pending" && <span className="badge badge-warning badge-sm">⏳ 待审核</span>}
+                      {/* Verified + active */}
+                      {team.verified && team.status === "active" && <span className="badge badge-success badge-sm">✓ 已认证</span>}
+                      {team.verified && team.status !== "active" && (
+                        <span className={`badge badge-sm ${statusBadgeClass(team.status, team.verified)}`}>
+                          ✓ {statusLabel(team.status)}
+                        </span>
+                      )}
+                      {/* Pending — not verified, awaiting review */}
+                      {!team.verified && team.status === "pending" && <span className="badge badge-warning badge-sm">⏳ 待审核</span>}
+                      {/* Rejected — explicitly rejected by reviewer */}
+                      {!team.verified && team.status === "rejected" && <span className="badge badge-error badge-sm">✕ 已拒绝</span>}
+                      {/* Inactive / suspended teams */}
+                      {(team.status === "inactive" || team.status === "suspended") && team.verified && (
+                        <span className="badge badge-ghost badge-sm">{statusLabel(team.status)}</span>
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-1">
                       {team.capabilities?.map(c => <span key={c} className="badge badge-outline badge-xs">{c}</span>)}
                     </div>
                     <p className="text-xs text-base-content/40">{team.contact_phone} · {team.member_count} 人</p>
                   </div>
+                  {/* Action buttons: only show for pending teams */}
                   {!team.verified && team.status==="pending" && (
-                    <div className="flex gap-1">
+                    <div className="flex gap-1" onClick={e => e.stopPropagation()}>
                       <button onClick={() => verify(team.id)} className="btn btn-primary btn-xs">通过</button>
                       <button onClick={() => reject(team.id)} className="btn btn-outline btn-xs">拒绝</button>
                     </div>

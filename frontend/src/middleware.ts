@@ -6,15 +6,31 @@
  *   / → middleware checks role → redirects to appropriate section
  *   /login → anyone can access
  *   /help/* → victim role (public can also access)
- *   /admin/* → commander, reviewer, admin, operator roles
+ *   /admin/* → commander, reviewer, admin, operator roles (with per-page restrictions)
  *   /team/* → rescue_team role
+ *
+ * Admin page access matrix:
+ *   /admin/dashboard  → admin, commander, zone_commander
+ *   /admin/review     → admin, reviewer
+ *   /admin/tasks      → admin, commander
+ *   /admin/teams      → admin, reviewer
+ *   /admin/disasters  → admin, operator
  */
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Route patterns for role-based access
+// Admin roles allowed in /admin/* paths
 const ADMIN_ROLES = ["admin", "commander", "zone_commander", "reviewer", "operator"];
 const TEAM_ROLES = ["rescue_team"];
+
+// Per-page admin access — one role must match in each category
+const ADMIN_PAGE_ROLES: Record<string, string[]> = {
+  "/admin/dashboard":  ["admin", "commander", "zone_commander"],
+  "/admin/review":     ["admin", "reviewer"],
+  "/admin/tasks":      ["admin", "commander"],
+  "/admin/teams":      ["admin", "reviewer"],
+  "/admin/disasters":  ["admin", "operator"],
+};
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -46,9 +62,21 @@ export function middleware(request: NextRequest) {
 
   // Route to appropriate section based on role
   if (pathname.startsWith("/admin")) {
+    // First: must have an admin role at all
     if (!role || !ADMIN_ROLES.includes(role)) {
-      // Not authorized for admin — redirect to login
       return NextResponse.redirect(new URL("/login", request.url));
+    }
+
+    // Second: per-page role check — match against the longest matching prefix
+    for (const [prefix, allowedRoles] of Object.entries(ADMIN_PAGE_ROLES)) {
+      if (pathname.startsWith(prefix)) {
+        if (!allowedRoles.includes(role)) {
+          // Not authorized for this specific admin page — redirect to login
+          console.warn(`[middleware] role "${role}" denied access to "${pathname}"`);
+          return NextResponse.redirect(new URL("/login", request.url));
+        }
+        break; // Found matching prefix, stop checking
+      }
     }
   }
 

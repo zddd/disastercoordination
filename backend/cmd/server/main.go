@@ -92,13 +92,14 @@ func main() {
 
 	// ---- Step 4: Build service layer (inject repositories) ----
 	var (
-		helpSvc     service.HelpService
-		disasterSvc service.DisasterService
-		reviewSvc   service.ReviewService
-		dispatchSvc service.DispatchService
-		taskSvc     service.TaskService
-		authSvc     service.AuthService
-		teamSvc     service.TeamService
+		helpSvc      service.HelpService
+		disasterSvc  service.DisasterService
+		reviewSvc    service.ReviewService
+		dispatchSvc  service.DispatchService
+		taskSvc      service.TaskService
+		authSvc      service.AuthService
+		teamSvc      service.TeamService
+		dashboardSvc service.DashboardService
 	)
 
 	if repo != nil {
@@ -109,6 +110,7 @@ func main() {
 		taskSvc = service.NewTaskService(repo.Task, repo.Help)
 		authSvc = service.NewAuthService(repo.User, cfg.JWTSecret)
 		teamSvc = service.NewTeamService(repo.Team)
+		dashboardSvc = service.NewDashboardService(repo.Help, repo.Disaster, repo.Team, repo.Task)
 		slog.Info("services initialized")
 	} else {
 		slog.Warn("services not initialized — database unavailable")
@@ -123,6 +125,7 @@ func main() {
 	taskHandler := handler.NewTaskHandler(taskSvc)
 	authHandler := handler.NewAuthHandler(authSvc)
 	teamHandler := handler.NewTeamHandler(teamSvc)
+	dashboardHandler := handler.NewDashboardHandler(dashboardSvc)
 
 	// SSE broker for real-time events
 	sseBroker := handler.NewSSEBroker()
@@ -184,6 +187,7 @@ func main() {
 	admin := auth.Group("")
 	admin.Use(middleware.RequireRole("admin", "commander", "reviewer", "operator"))
 	{
+		admin.GET("/admin/dashboard/stats", dashboardHandler.Stats)
 		admin.POST("/disasters", disasterHandler.Create)
 		admin.GET("/disasters", disasterHandler.List)
 		// /disasters/active is public — see above
