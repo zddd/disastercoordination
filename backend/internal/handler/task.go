@@ -37,6 +37,30 @@ func (h *TaskHandler) ListMine(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"tasks": tasks, "count": len(tasks)})
 }
 
+// ListAll handles GET /api/v1/tasks — list all tasks across all disasters for admin overview.
+// Requires admin or commander role (enforced at route level).
+func (h *TaskHandler) ListAll(c *gin.Context) {
+	disasterID := c.Query("disaster_id")
+	status := c.Query("status")
+
+	tasks, err := h.svc.ListAll(c.Request.Context(), disasterID, status)
+	if err != nil {
+		slog.Error("failed to list all tasks",
+			"disaster_id", disasterID,
+			"error", err,
+		)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list all tasks"})
+		return
+	}
+
+	slog.Debug("admin tasks listed",
+		"count", len(tasks),
+		"disaster_id", disasterID,
+	)
+
+	c.JSON(http.StatusOK, gin.H{"tasks": tasks, "count": len(tasks)})
+}
+
 // Get handles GET /api/v1/tasks/:id — get task details.
 func (h *TaskHandler) Get(c *gin.Context) {
 	taskID := c.Param("id")

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { authFetch } from "@/lib/fetch";
 import { LEVEL_MAP, LEVEL_OPTIONS, TYPE_MAP } from "@/lib/disaster";
 
-interface Disaster { id: string; name: string; type: string; level: string; status: string; started_at: string; }
+interface Disaster { id: string; name: string; type: string; level: string; status: string; started_at: string; closed_at?: string; }
 
 export default function DisastersPage() {
   const [disasters, setDisasters] = useState<Disaster[]>([]);
@@ -120,7 +120,7 @@ export default function DisastersPage() {
           <table className="table table-sm">
             <thead>
               <tr>
-                <th>灾害名称</th><th>类型</th><th>响应等级</th><th>状态</th><th>开始时间</th><th></th>
+                <th>灾害名称</th><th>类型</th><th>响应等级</th><th>状态</th><th>开始时间</th><th>结束时间</th><th></th>
               </tr>
             </thead>
             <tbody>
@@ -148,6 +148,11 @@ export default function DisastersPage() {
                       )}
                     </td>
                     <td className="text-base-content font-medium">{new Date(d.started_at).toLocaleString("zh-CN")}</td>
+                    <td className="text-base-content/60 font-medium text-xs">
+                      {d.closed_at
+                        ? new Date(d.closed_at).toLocaleString("zh-CN")
+                        : <span className="text-base-content/30">-</span>}
+                    </td>
                     <td>
                       {d.status === "active" && (
                         <button onClick={() => setCloseConfirm(d.id)} className="btn btn-outline btn-error btn-xs">关闭</button>

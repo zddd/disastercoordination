@@ -588,9 +588,15 @@ func (r *taskPostgresRepo) ListByTeam(ctx context.Context, teamID string, status
 
 func (r *taskPostgresRepo) ListByDisaster(ctx context.Context, disasterID string) ([]*model.RescueTask, error) {
 	query := `SELECT id, help_request_id, team_id, disaster_id, status, assigned_by, created_at
-			  FROM rescue_tasks WHERE disaster_id = $1 ORDER BY created_at DESC LIMIT 200`
+			  FROM rescue_tasks`
+	args := []interface{}{}
+	if disasterID != "" {
+		query += ` WHERE disaster_id = $1`
+		args = append(args, disasterID)
+	}
+	query += ` ORDER BY created_at DESC LIMIT 200`
 
-	rows, err := r.db.QueryContext(ctx, query, disasterID)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

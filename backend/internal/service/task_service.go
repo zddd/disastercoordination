@@ -19,6 +19,9 @@ type TaskService interface {
 	// ListMine returns tasks assigned to a specific team.
 	ListMine(ctx context.Context, teamID string, status string) ([]*model.RescueTask, error)
 
+	// ListAll returns tasks across all (or specific) disasters for admin overview.
+	ListAll(ctx context.Context, disasterID string, status string) ([]*model.RescueTask, error)
+
 	// UpdateStatus transitions the task to a new state following the state machine rules.
 	UpdateStatus(ctx context.Context, taskID, newStatus, operatorID, notes string) (*model.RescueTask, error)
 
@@ -48,6 +51,26 @@ func (s *taskService) GetByID(ctx context.Context, taskID string) (*model.Rescue
 
 func (s *taskService) ListMine(ctx context.Context, teamID string, status string) ([]*model.RescueTask, error) {
 	return s.taskRepo.ListByTeam(ctx, teamID, status)
+}
+
+// ListAll returns all tasks for admin overview.
+// If disasterID is empty, returns all tasks across all disasters.
+func (s *taskService) ListAll(ctx context.Context, disasterID string, status string) ([]*model.RescueTask, error) {
+	tasks, err := s.taskRepo.ListByDisaster(ctx, disasterID)
+	if err != nil {
+		return nil, err
+	}
+	// Apply status filter if provided (client-side filter for MVP)
+	if status != "" {
+		filtered := make([]*model.RescueTask, 0)
+		for _, t := range tasks {
+			if t.Status == status {
+				filtered = append(filtered, t)
+			}
+		}
+		return filtered, nil
+	}
+	return tasks, nil
 }
 
 // UpdateStatus transitions the task to a new state.

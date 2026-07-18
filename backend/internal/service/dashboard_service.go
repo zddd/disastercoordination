@@ -17,6 +17,8 @@ type DashboardStats struct {
 
 	// Help request totals per active disaster
 	TotalHelps    int `json:"total_helps"`
+	ReviewedHelps int `json:"reviewed_helps"`
+	PendingHelps  int `json:"pending_helps"`
 	CriticalHelps int `json:"critical_helps"`
 	NormalHelps   int `json:"normal_helps"`
 	MildHelps     int `json:"mild_helps"`
@@ -94,6 +96,12 @@ func (s *dashboardService) GetStats(ctx context.Context) (*DashboardStats, error
 		}
 		for _, h := range helps {
 			stats.TotalHelps++
+			// Review status breakdown
+			if h.ReviewStatus == "approved" {
+				stats.ReviewedHelps++
+			} else if h.ReviewStatus == "pending" {
+				stats.PendingHelps++
+			}
 			switch h.Urgency {
 			case "critical":
 				stats.CriticalHelps++

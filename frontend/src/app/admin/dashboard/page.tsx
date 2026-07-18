@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { authFetch } from "@/lib/fetch";
 
 interface PoolItem { help_id: string; category: string; urgency: string; description: string; waiting_minutes: number; is_isolated: boolean; nearby_teams?: { team_id: string; name: string; distance_m: number }[]; disaster_name?: string; }
@@ -10,6 +11,8 @@ interface DashboardStats {
   active_disasters: number;
   total_disasters: number;
   total_helps: number;
+  reviewed_helps: number;
+  pending_helps: number;
   critical_helps: number;
   normal_helps: number;
   mild_helps: number;
@@ -29,6 +32,9 @@ export default function DashboardPage() {
   const [pool, setPool] = useState<PoolItem[]>([]);
   const [poolStats, setPoolStats] = useState({ total:0, critical:0, normal:0, mild:0 });
   const [dashStats, setDashStats] = useState<DashboardStats | null>(null);
+  // Pool filter state
+  const [poolSearch, setPoolSearch] = useState("");
+  const [poolUrgencyFilter, setPoolUrgencyFilter] = useState("all");
 
   // Load dashboard global statistics from the aggregated endpoint
   useEffect(() => {
@@ -107,6 +113,10 @@ export default function DashboardPage() {
         <div className="stat bg-base-100 rounded-box shadow-sm border border-base-300 p-3">
           <div className="stat-title text-xs">求助总数</div>
           <div className="stat-value text-lg text-primary">{dashStats?.total_helps ?? "-"}</div>
+          <div className="stat-desc text-xs">
+            {dashStats?.reviewed_helps ?? 0} 已审核
+            {dashStats?.pending_helps !== undefined && dashStats.pending_helps > 0 ? ` · ${dashStats.pending_helps} 待审核` : ""}
+          </div>
         </div>
         <div className="stat bg-base-100 rounded-box shadow-sm border border-base-300 p-3">
           <div className="stat-title text-xs">救援任务</div>
@@ -157,10 +167,42 @@ export default function DashboardPage() {
             <span className="text-xs font-normal text-base-content/40 ml-auto">全部活跃灾害</span>
           </h2>
 
+          {/* Pool filter bar */}
+          {pool.length > 0 && (
+            <div className="flex flex-col sm:flex-row gap-2 mt-2">
+              <input
+                type="text"
+                placeholder="搜索求助类型或描述..."
+                value={poolSearch}
+                onChange={e => setPoolSearch(e.target.value)}
+                className="input input-bordered input-sm flex-1"
+              />
+              <select
+                value={poolUrgencyFilter}
+                onChange={e => setPoolUrgencyFilter(e.target.value)}
+                className="select select-bordered select-sm"
+              >
+                <option value="all">全部紧急度</option>
+                <option value="critical">紧急</option>
+                <option value="normal">一般</option>
+                <option value="mild">轻微</option>
+              </select>
+            </div>
+          )}
+
           <div className="space-y-2 mt-2">
-            {pool.slice(0, 20).map(item => (
-              <div key={item.help_id}
-                   className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-base-200 rounded-lg text-sm">
+            {pool.filter(item => {
+              if (poolUrgencyFilter !== "all" && item.urgency !== poolUrgencyFilter) return false;
+              if (!poolSearch) return true;
+              const q = poolSearch.toLowerCase();
+              return (
+                item.category.toLowerCase().includes(q) ||
+                item.description?.toLowerCase().includes(q) ||
+                item.disaster_name?.toLowerCase().includes(q)
+              );
+            }).slice(0, 30).map(item => (
+              <Link key={item.help_id} href={`/admin/help/${item.help_id}`}
+                   className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-base-200 rounded-lg text-sm hover:bg-base-300 transition-colors cursor-pointer">
                 <div className="flex items-center gap-3">
                   <span className={`w-2 h-2 rounded-full ${item.urgency==="critical"?"bg-error":"bg-warning"}`} />
                   <span className="font-medium">{item.category}</span>
@@ -181,7 +223,7 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
 

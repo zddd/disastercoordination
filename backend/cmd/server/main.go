@@ -188,6 +188,7 @@ func main() {
 	admin.Use(middleware.RequireRole("admin", "commander", "reviewer", "operator"))
 	{
 		admin.GET("/admin/dashboard/stats", dashboardHandler.Stats)
+		admin.GET("/tasks", taskHandler.ListAll)
 		admin.POST("/disasters", disasterHandler.Create)
 		admin.GET("/disasters", disasterHandler.List)
 		// /disasters/active is public — see above
