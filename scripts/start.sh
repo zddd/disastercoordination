@@ -77,11 +77,28 @@ cmd_restart_backend() {
 
 cmd_restart_frontend() {
     log "重启前端..."
+    # 1. 停止旧进程
     lsof -ti:3000 | xargs kill -9 2>/dev/null || true
     sleep 1
+
     cd "$ROOT_DIR/$FRONTEND_DIR"
+
+    # 2. 清理 Next.js 构建缓存，避免切换分支/配置后旧缓存残留导致问题
+    # .next 目录包含 Turbopack 编译缓存、CSS 编译产物等，不清理可能导致:
+    # - daisyUI 主题配置变更不生效
+    # - globals.css 修改后样式不更新
+    # - 页面修改后仍显示旧内容
+    if [ -d ".next" ]; then
+        log "  清理 .next 构建缓存..."
+        rm -rf .next
+        log "  ✓ 缓存已清理"
+    fi
+
+    # 3. 启动开发服务器
     npm run dev > /tmp/dc-frontend.log 2>&1 &
     echo $! > /tmp/dc-frontend.pid
+
+    # 4. 等待就绪
     for i in $(seq 1 15); do
         if curl -s http://localhost:3000 > /dev/null 2>&1; then
             log "  ✓ 前端就绪 (http://localhost:3000)"; break
