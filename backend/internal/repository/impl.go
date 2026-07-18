@@ -241,7 +241,8 @@ func (r *helpPostgresRepo) CheckDuplicate(ctx context.Context, disasterID string
 
 func (r *helpPostgresRepo) ListPendingReview(ctx context.Context, limit int) ([]*model.HelpRequest, error) {
 	query := `
-		SELECT id, disaster_id, category, urgency, description, created_at
+		SELECT id, disaster_id, category, urgency, description, affected_count,
+			   phone, contact_name, is_isolated_report, created_at
 		FROM help_requests WHERE review_status = 'pending'
 		ORDER BY CASE urgency WHEN 'critical' THEN 0 ELSE 1 END, created_at ASC
 		LIMIT $1`
@@ -255,10 +256,13 @@ func (r *helpPostgresRepo) ListPendingReview(ctx context.Context, limit int) ([]
 	var results []*model.HelpRequest
 	for rows.Next() {
 		h := &model.HelpRequest{}
+		var phone, contactName sql.NullString
 		if err := rows.Scan(&h.ID, &h.DisasterID, &h.Category, &h.Urgency,
-			&h.Description, &h.CreatedAt); err != nil {
+			&h.Description, &h.AffectedCount, &phone, &contactName, &h.IsIsolatedReport, &h.CreatedAt); err != nil {
 			return nil, err
 		}
+		h.Phone = phone.String
+		h.ContactName = contactName.String
 		results = append(results, h)
 	}
 	return results, rows.Err()

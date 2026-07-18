@@ -186,8 +186,10 @@ export default function ReviewPage() {
                     </span>
                   </div>
 
-                  {/* Full description */}
-                  <p className="text-sm text-base-content/70 leading-relaxed">{item.description}</p>
+                  {/* Description with prefix */}
+                  <p className="text-sm text-base-content/70 leading-relaxed">
+                    <span className="text-base-content/50">求助内容：</span>{item.description}
+                  </p>
 
                   {/* Photos placeholder */}
                   <div className="flex items-center gap-2 text-xs text-base-content/40">

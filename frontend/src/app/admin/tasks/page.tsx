@@ -227,7 +227,7 @@ export default function AdminTasksPage() {
               {filtered.map(task => (
                 <tr key={task.id} className="hover cursor-pointer"
                     onClick={() => window.location.href = `/admin/tasks/${task.id}`}>
-                  <td className="text-xs badge badge-outline badge-xs">{task._disaster_name?.slice(0,8) || "-"}</td>
+                  <td className="text-xs">{task._disaster_name?.slice(0,8) || "-"}</td>
                   <td className="font-medium text-sm">
                     {task._help_category ? (CATEGORY_LABELS[task._help_category] || task._help_category) : "-"}
                   </td>

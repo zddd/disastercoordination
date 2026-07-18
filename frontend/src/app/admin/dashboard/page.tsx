@@ -24,6 +24,7 @@ interface DashboardStats {
   total_helps: number;
   reviewed_helps: number;
   pending_helps: number;
+  completed_helps: number;
   critical_helps: number;
   normal_helps: number;
   mild_helps: number;
@@ -175,7 +176,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Global Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
         <div className="stat bg-base-100 rounded-box shadow-sm border border-base-300 p-3">
           <div className="stat-title text-xs">活跃灾害</div>
           <div className="stat-value text-lg text-error">{dashStats?.active_disasters ?? "-"}</div>
@@ -196,6 +197,10 @@ export default function DashboardPage() {
         <div className="stat bg-base-100 rounded-box shadow-sm border border-base-300 p-3">
           <div className="stat-title text-xs">进行中任务</div>
           <div className="stat-value text-lg text-warning">{dashStats?.in_progress_tasks ?? "-"}</div>
+        </div>
+        <div className="stat bg-base-100 rounded-box shadow-sm border border-base-300 p-3">
+          <div className="stat-title text-xs">已完成救助</div>
+          <div className="stat-value text-lg text-success">{dashStats?.completed_helps ?? "-"}</div>
         </div>
         <div className="stat bg-base-100 rounded-box shadow-sm border border-base-300 p-3">
           <div className="stat-title text-xs">救援队伍</div>
@@ -280,7 +285,7 @@ export default function DashboardPage() {
                   <tr>
                     <th>类型</th>
                     <th>紧急度</th>
-                    <th>灾害</th>
+                    <th>所属灾害</th>
                     <th>描述</th>
                     <th>等待时长</th>
                     <th>救援状态</th>
@@ -298,11 +303,9 @@ export default function DashboardPage() {
                           {item.urgency==="critical"?"紧急":"一般"}
                         </span>
                       </td>
-                      <td>
-                        <span className="badge badge-outline badge-xs">{item.disaster_name?.slice(0,8) || "-"}</span>
-                      </td>
-                      <td className="text-xs text-base-content/60 line-clamp-1">{item.description}</td>
-                      <td className="text-xs text-base-content/40 whitespace-nowrap">{Math.round(item.waiting_minutes)} 分钟</td>
+                      <td className="text-sm">{item.disaster_name?.slice(0,8) || "-"}</td>
+                      <td className="text-sm text-base-content/60 line-clamp-1">{item.description}</td>
+                      <td className="text-sm text-base-content/40 whitespace-nowrap">{Math.round(item.waiting_minutes)} 分钟</td>
                       <td>
                         <span className={`badge badge-xs ${rescueStatusBadge(item.rescue_status || item.status || "in_pool")}`}>
                           {rescueStatusLabel(item.rescue_status || item.status || "in_pool")}
