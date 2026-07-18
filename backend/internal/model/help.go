@@ -98,6 +98,10 @@ type HelpStatusResponse struct {
 	HelpID              string `json:"help_id"`
 	Status              string `json:"status"`
 	ReviewStatus        string `json:"review_status"`
+	Category            string `json:"category"`             // Non-sensitive: help type like trapped/injured
+	Urgency             string `json:"urgency"`              // Non-sensitive: critical/normal/mild
+	Description         string `json:"description"`          // Non-sensitive: public help description
+	AffectedCount       int    `json:"affected_count"`       // Non-sensitive
 	ProgressDescription string `json:"progress_description"` // Human-readable progress text
 	EstimatedMinutes    int    `json:"estimated_minutes"`    // SLA estimate
 }

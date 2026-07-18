@@ -37,7 +37,7 @@ interface DashboardStats {
   in_progress_tasks: number;
 }
 
-interface TeamBrief { id: string; name: string; type: string; distance_m?: number; available?: boolean; }
+interface TeamBrief { id: string; name: string; type: string; distance_m?: number; }
 
 export default function DashboardPage() {
   const [disasters, setDisasters] = useState<{id:string;name:string}[]>([]);
@@ -92,6 +92,9 @@ export default function DashboardPage() {
       .catch(err => console.error("[dashboard] stats failed", { error: String(err) }));
   }, []);
 
+  // Load pool items: also fetch helps with status=assigned for full visibility
+  // The dispatch pool now includes both in_pool (not yet dispatched) and assigned (dispatched)
+  // Backend ListInPool needs to be updated to include assigned helps
   useEffect(() => {
     authFetch("/disasters/active").then(r => r.json()).then(async (d) => {
       const list: {id:string;name:string}[] = d.disasters || [];
@@ -104,13 +107,18 @@ export default function DashboardPage() {
         try {
           const res = await authFetch(`/dispatch/pool?disaster_id=${ds.id}`);
           const data = await res.json();
-          (data.items || []).forEach((i: PoolItem) => all.push({ ...i, disaster_name: nameMap[ds.id] || ds.id, rescue_status: "in_pool" }));
+          (data.items || []).forEach((i: PoolItem) => all.push({
+            ...i,
+            disaster_name: nameMap[ds.id] || ds.id,
+            rescue_status: i.rescue_status || "in_pool",
+          }));
         } catch {}
       }
       setPool(all);
       let c = 0, n = 0, m = 0;
       all.forEach(i => { if (i.urgency === "critical") c++; else if (i.urgency === "normal") n++; else m++; });
       setPoolStats({ total: all.length, critical: c, normal: n, mild: m });
+      console.info("[dashboard] pool loaded", { total: all.length });
     }).catch(err => console.error("[dashboard] pool failed", { error: String(err) }));
   }, []);
 
@@ -136,7 +144,8 @@ export default function DashboardPage() {
     setDispatchLoading(true);
     try {
       await authFetch("/dispatch/assign", { method: "POST", body: JSON.stringify({ help_id: dispatchHelp.help_id, team_id: dispatchTeamId }) });
-      setPool(prev => prev.filter(p => p.help_id !== dispatchHelp.help_id));
+      // Update local state — change rescue_status from in_pool to assigned
+      setPool(prev => prev.map(p => p.help_id === dispatchHelp.help_id ? { ...p, rescue_status: "assigned" } : p));
       setDispatchHelp(null);
     } catch (e) {
       console.error("[dashboard] dispatch failed", { error: String(e) });
@@ -156,10 +165,6 @@ export default function DashboardPage() {
   }, [pool, poolSearch, poolUrgencyFilter, poolDisasterFilter, poolTypeFilter, poolRescueFilter]);
 
   const categoryOptions = useMemo(() => Array.from(new Set(pool.map(i => i.category))), [pool]);
-
-  // Admin navbar back button support for sub-page
-  // The admin/help/[id] page is a child of admin layout, and the back button
-  // is rendered by layout.tsx when pathname starts with /admin/help/
 
   return (
     <div className="space-y-4">
@@ -201,7 +206,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Dispatch Pool Stats Grid */}
+      {/* Dispatch Pool Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="stat bg-base-100 rounded-box shadow-sm border border-base-300">
           <div className="stat-title">调度池总数</div>
@@ -222,7 +227,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Dispatch Pool — table layout */}
+      {/* Dispatch Pool — table with clickable rows */}
       <div className="card bg-base-100 shadow-sm">
         <div className="card-body">
           <h2 className="card-title text-base">
@@ -231,7 +236,7 @@ export default function DashboardPage() {
             <span className="text-xs font-normal text-base-content/40 ml-auto">全部活跃灾害</span>
           </h2>
 
-          {/* Filter bar — compact selects */}
+          {/* Filter bar */}
           {pool.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <input type="text" placeholder="搜索求助..." value={poolSearch}
@@ -259,65 +264,52 @@ export default function DashboardPage() {
                 <option value="all">救援状态</option>
                 <option value="in_pool">待调度</option>
                 <option value="assigned">已分配</option>
+                <option value="accepted">已接单</option>
+                <option value="en_route">赶往现场</option>
+                <option value="rescuing">施救中</option>
               </select>
             </div>
           )}
 
-          {/* Pool table */}
+          {/* Pool table — 7 columns: type/urgency/disaster/description/waiting/rescue-status/team */}
           {pool.length > 0 && (
             <div className="overflow-x-auto mt-2">
-              <table className="table table-sm">
+              <table className="table table-sm table-fixed">
                 <thead>
                   <tr>
-                    <th className="w-14">类型</th>
-                    <th className="w-14">紧急度</th>
-                    <th className="w-20">灾害</th>
-                    <th className="w-16">救援状态</th>
+                    <th>类型</th>
+                    <th>紧急度</th>
+                    <th>灾害</th>
                     <th>描述</th>
-                    <th className="w-14">等待</th>
-                    <th className="w-14">队伍</th>
-                    <th className="w-16"></th>
+                    <th>等待时长</th>
+                    <th>救援状态</th>
+                    <th>队伍</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredPool.slice(0, 40).map(item => (
-                    <tr key={item.help_id} className="hover">
-                      <td>
-                        <Link href={`/admin/help/${item.help_id}`}
-                              className="font-medium link link-hover text-sm">
-                          {categoryLabel(item.category)}
-                        </Link>
-                      </td>
+                    <tr key={item.help_id} className="hover cursor-pointer"
+                        onClick={() => window.location.href = `/admin/help/${item.help_id}`}>
+                      <td className="font-medium text-sm">{categoryLabel(item.category)}</td>
                       <td>
                         <span className={`badge badge-xs ${item.urgency==="critical"?"badge-error":"badge-ghost"}`}>
                           {item.urgency==="critical"?"紧急":"一般"}
                         </span>
                       </td>
                       <td>
-                        <span className="text-xs badge badge-outline badge-xs">{item.disaster_name?.slice(0,8)}</span>
+                        <span className="badge badge-outline badge-xs">{item.disaster_name?.slice(0,8) || "-"}</span>
                       </td>
+                      <td className="text-xs text-base-content/60 line-clamp-1">{item.description}</td>
+                      <td className="text-xs text-base-content/40 whitespace-nowrap">{Math.round(item.waiting_minutes)} 分钟</td>
                       <td>
                         <span className={`badge badge-xs ${rescueStatusBadge(item.rescue_status || "in_pool")}`}>
                           {rescueStatusLabel(item.rescue_status || "in_pool")}
                         </span>
                       </td>
-                      <td>
-                        <Link href={`/admin/help/${item.help_id}`}
-                              className="text-xs text-base-content/60 line-clamp-1 max-w-[200px] inline-block align-top">
-                          {item.description}
-                        </Link>
-                      </td>
-                      <td className="text-xs text-base-content/40 whitespace-nowrap">{Math.round(item.waiting_minutes)}分钟</td>
-                      <td>
+                      <td className="text-center">
                         {item.nearby_teams && item.nearby_teams.length > 0
                           ? <span className="badge badge-info badge-xs">{item.nearby_teams.length}</span>
                           : <span className="text-base-content/30">-</span>}
-                      </td>
-                      <td>
-                        <button onClick={() => openDispatch(item)}
-                                className="btn btn-primary btn-xs normal-case min-h-0 h-6">
-                          调度
-                        </button>
                       </td>
                     </tr>
                   ))}

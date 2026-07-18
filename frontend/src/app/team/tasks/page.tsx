@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { authFetch } from "@/lib/fetch";
 
 interface Task { id: string; help_request_id: string; team_id: string; status: string; created_at: string; }
@@ -80,7 +81,8 @@ export default function TeamTasksPage() {
       {tasks.map(task => {
         const action = ACTIONS[task.status];
         return (
-          <div key={task.id} className="card bg-base-100 shadow-sm">
+          <Link key={task.id} href={`/team/tasks/${task.id}`}
+                className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow block">
             <div className="card-body p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className={`badge badge-sm ${STATUS_BADGE[task.status] || "badge-ghost"}`}>
@@ -108,7 +110,7 @@ export default function TeamTasksPage() {
 
               <p className="text-xs text-base-content/40 font-mono">任务 #{task.id.slice(0,8)} · 求助 #{task.help_request_id.slice(0,8)}</p>
 
-              <div className="card-actions mt-3">
+              <div className="card-actions mt-3" onClick={e => e.preventDefault()}>
                 {action?.next && (
                   <button onClick={() => updateStatus(task.id, action.next!)}
                           className="btn btn-primary btn-sm flex-1 normal-case">{action.label}</button>
@@ -123,7 +125,7 @@ export default function TeamTasksPage() {
                 )}
               </div>
             </div>
-          </div>
+          </Link>
         );
       })}
 

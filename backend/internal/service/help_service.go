@@ -196,6 +196,10 @@ func (s *helpService) GetHelpStatus(ctx context.Context, helpID string) (*model.
 		HelpID:              help.ID,
 		Status:              help.Status,
 		ReviewStatus:        help.ReviewStatus,
+		Category:            help.Category,
+		Urgency:             help.Urgency,
+		Description:         help.Description,
+		AffectedCount:       help.AffectedCount,
 		ProgressDescription: buildProgressDescription(help.Status),
 		EstimatedMinutes:    model.EstimatedReviewTime(help.Urgency),
 	}, nil

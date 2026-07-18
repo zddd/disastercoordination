@@ -179,7 +179,8 @@ func (r *helpPostgresRepo) UpdateReviewStatus(ctx context.Context, id string, re
 }
 
 func (r *helpPostgresRepo) ListInPool(ctx context.Context, disasterID string, zone string) ([]*model.HelpRequest, error) {
-	// Pool = reviewed helps not yet assigned
+	// Pool = reviewed helps awaiting dispatch or already assigned
+	// Includes both in_pool and assigned statuses for full command visibility
 	query := `
 		SELECT h.id, h.disaster_id, h.submitter_id, h.category, h.urgency, h.description,
 			   h.affected_count,
@@ -188,7 +189,7 @@ func (r *helpPostgresRepo) ListInPool(ctx context.Context, disasterID string, zo
 			   EXTRACT(EPOCH FROM NOW() - h.reviewed_at)/60 as waiting_minutes,
 			   h.created_at, h.updated_at
 		FROM help_requests h
-		WHERE h.disaster_id = $1 AND h.status = 'in_pool'
+		WHERE h.disaster_id = $1 AND h.status IN ('in_pool', 'assigned')
 		ORDER BY CASE h.urgency WHEN 'critical' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END,
 				 h.reviewed_at ASC`
 
