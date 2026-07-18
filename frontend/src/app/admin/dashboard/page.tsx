@@ -15,6 +15,7 @@ interface PoolItem {
   nearby_teams?: { team_id: string; name: string; distance_m: number; available?: boolean; active_tasks?: number }[];
   disaster_name?: string;
   rescue_status?: string;
+  status?: string; // Backend PoolItem.status: in_pool/assigned/...
 }
 
 interface DashboardStats {
@@ -107,10 +108,10 @@ export default function DashboardPage() {
         try {
           const res = await authFetch(`/dispatch/pool?disaster_id=${ds.id}`);
           const data = await res.json();
-          (data.items || []).forEach((i: PoolItem) => all.push({
+          (data.items || []).forEach((i: any) => all.push({
             ...i,
             disaster_name: nameMap[ds.id] || ds.id,
-            rescue_status: i.rescue_status || "in_pool",
+            rescue_status: i.status || "in_pool", // Use backend's status field (in_pool/assigned)
           }));
         } catch {}
       }
@@ -284,6 +285,7 @@ export default function DashboardPage() {
                     <th>等待时长</th>
                     <th>救援状态</th>
                     <th>队伍</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -302,14 +304,20 @@ export default function DashboardPage() {
                       <td className="text-xs text-base-content/60 line-clamp-1">{item.description}</td>
                       <td className="text-xs text-base-content/40 whitespace-nowrap">{Math.round(item.waiting_minutes)} 分钟</td>
                       <td>
-                        <span className={`badge badge-xs ${rescueStatusBadge(item.rescue_status || "in_pool")}`}>
-                          {rescueStatusLabel(item.rescue_status || "in_pool")}
+                        <span className={`badge badge-xs ${rescueStatusBadge(item.rescue_status || item.status || "in_pool")}`}>
+                          {rescueStatusLabel(item.rescue_status || item.status || "in_pool")}
                         </span>
                       </td>
                       <td className="text-center">
                         {item.nearby_teams && item.nearby_teams.length > 0
                           ? <span className="badge badge-info badge-xs">{item.nearby_teams.length}</span>
                           : <span className="text-base-content/30">-</span>}
+                      </td>
+                      <td onClick={e => e.stopPropagation()}>
+                        <button onClick={() => openDispatch(item)}
+                                className={`btn btn-xs normal-case min-h-0 h-6 ${item.status === "in_pool" ? "btn-primary" : "btn-outline"}`}>
+                          {item.status === "in_pool" ? "调度" : "重分"}
+                        </button>
                       </td>
                     </tr>
                   ))}

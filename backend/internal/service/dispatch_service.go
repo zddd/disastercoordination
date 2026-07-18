@@ -42,6 +42,8 @@ type PoolItem struct {
 	Lng            float64         `json:"lng"`
 	WaitingMinutes float64         `json:"waiting_minutes"`
 	IsIsolated     bool            `json:"is_isolated"`
+	Status         string          `json:"status"`          // Help request status: in_pool/assigned/...
+	ReviewStatus   string          `json:"review_status"`   // Review status: pending/approved/rejected
 	NearbyTeams    []SuggestedTeam `json:"nearby_teams"`
 }
 
@@ -114,6 +116,8 @@ func (s *dispatchService) GetPool(ctx context.Context, disasterID string) ([]Poo
 			Lng:            h.OffsetLng,
 			WaitingMinutes: time.Since(h.CreatedAt).Minutes(),
 			IsIsolated:     h.IsIsolatedReport,
+			Status:         h.Status,
+			ReviewStatus:   h.ReviewStatus,
 			NearbyTeams:    nearbyTeams,
 		})
 	}

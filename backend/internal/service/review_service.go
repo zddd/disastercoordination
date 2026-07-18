@@ -19,15 +19,20 @@ type ReviewService interface {
 }
 
 // ReviewQueueItem represents a help request in the review queue with SLA info.
+// Includes all public help information so reviewers can assess without clicking through.
 type ReviewQueueItem struct {
-	HelpID         string  `json:"help_id"`
-	DisasterID     string  `json:"disaster_id"`
-	Category       string  `json:"category"`
-	Urgency        string  `json:"urgency"`
-	Description    string  `json:"description"`
-	WaitingMinutes float64 `json:"waiting_minutes"` // Minutes since submission
-	SLAMinutes     int     `json:"sla_minutes"`     // Remaining SLA time (may be negative for overdue)
-	Status         string  `json:"status"`
+	HelpID         string   `json:"help_id"`
+	DisasterID     string   `json:"disaster_id"`
+	Category       string   `json:"category"`
+	Urgency        string   `json:"urgency"`
+	Description    string   `json:"description"`
+	AffectedCount  int      `json:"affected_count"`  // Number of affected people
+	ContactName    string   `json:"contact_name"`     // Submitter contact name
+	Phone          string   `json:"phone"`            // Submitter phone number
+	WaitingMinutes float64  `json:"waiting_minutes"`  // Minutes since submission
+	SLAMinutes     int      `json:"sla_minutes"`      // SLA target in minutes
+	Status         string   `json:"status"`
+	IsIsolated     bool     `json:"is_isolated"`      // Whether this is a single-person isolated report
 	AIFlags        []string `json:"ai_flags,omitempty"` // AI pre-screening results
 }
 
@@ -63,10 +68,14 @@ func (s *reviewService) GetQueue(ctx context.Context, limit int) ([]ReviewQueueI
 			DisasterID:     h.DisasterID,
 			Category:       h.Category,
 			Urgency:        h.Urgency,
-			Description:    truncateString(h.Description, 100),
+			Description:    h.Description, // Full description for reviewer assessment
+			AffectedCount:  h.AffectedCount,
+			ContactName:    h.ContactName,
+			Phone:          h.Phone,
 			WaitingMinutes: waitingMinutes,
 			SLAMinutes:     slaMinutes,
 			Status:         h.ReviewStatus,
+			IsIsolated:     h.IsIsolatedReport,
 		}
 
 		// Log SLA breaches for observability
