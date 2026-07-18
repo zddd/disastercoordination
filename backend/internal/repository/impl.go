@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/lib/pq"
+
 	"disaster-coordination/internal/model"
 )
 
@@ -369,16 +371,29 @@ func (r *disasterPostgresRepo) GetSummary(ctx context.Context, id string) (*mode
 // ---- Team Repository Implementation ----
 
 func (r *teamPostgresRepo) Create(ctx context.Context, t *model.RescueTeam) error {
+	slog.DebugContext(ctx, "creating rescue team record",
+		"team_id", t.ID,
+		"name", t.Name,
+		"type", t.Type,
+	)
+
 	query := `
 		INSERT INTO rescue_teams (id, name, type, capabilities, contact_phone, contact_person, member_count, status, verified, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
 
 	_, err := r.db.ExecContext(ctx, query,
-		t.ID, t.Name, t.Type, t.Capabilities, t.ContactPhone,
+		t.ID, t.Name, t.Type, pq.Array(t.Capabilities), t.ContactPhone,
 		nullString(t.ContactPerson), t.MemberCount, t.Status, t.Verified,
 		t.CreatedAt, t.UpdatedAt,
 	)
-	return err
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to create rescue team record",
+			"team_id", t.ID,
+			"error", err,
+		)
+		return fmt.Errorf("create rescue_team: %w", err)
+	}
+	return nil
 }
 
 func (r *teamPostgresRepo) GetByID(ctx context.Context, id string) (*model.RescueTeam, error) {
@@ -388,11 +403,15 @@ func (r *teamPostgresRepo) GetByID(ctx context.Context, id string) (*model.Rescu
 	t := &model.RescueTeam{}
 	var contactPerson sql.NullString
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&t.ID, &t.Name, &t.Type, &t.Capabilities, &t.ContactPhone,
+		&t.ID, &t.Name, &t.Type, pq.Array(&t.Capabilities), &t.ContactPhone,
 		&contactPerson, &t.MemberCount, &t.Status, &t.Verified, &t.CreatedAt,
 	)
 	if err != nil {
-		return nil, err
+		slog.ErrorContext(ctx, "failed to get rescue team by ID",
+			"team_id", id,
+			"error", err,
+		)
+		return nil, fmt.Errorf("get rescue_team by ID: %w", err)
 	}
 	t.ContactPerson = contactPerson.String
 	return t, nil
@@ -404,20 +423,36 @@ func (r *teamPostgresRepo) List(ctx context.Context) ([]*model.RescueTeam, error
 
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
-		return nil, err
+		slog.ErrorContext(ctx, "failed to query rescue teams list",
+			"error", err,
+		)
+		return nil, fmt.Errorf("list rescue_teams query: %w", err)
 	}
 	defer rows.Close()
 
 	var results []*model.RescueTeam
 	for rows.Next() {
 		t := &model.RescueTeam{}
-		if err := rows.Scan(&t.ID, &t.Name, &t.Type, &t.Capabilities, &t.ContactPhone,
+		if err := rows.Scan(&t.ID, &t.Name, &t.Type, pq.Array(&t.Capabilities), &t.ContactPhone,
 			&t.MemberCount, &t.Status, &t.Verified, &t.CreatedAt); err != nil {
-			return nil, err
+			slog.ErrorContext(ctx, "failed to scan rescue team row",
+				"error", err,
+			)
+			return nil, fmt.Errorf("scan rescue_team row: %w", err)
 		}
 		results = append(results, t)
 	}
-	return results, rows.Err()
+	if err := rows.Err(); err != nil {
+		slog.ErrorContext(ctx, "error iterating rescue teams rows",
+			"error", err,
+		)
+		return nil, fmt.Errorf("rescue_teams rows iteration: %w", err)
+	}
+
+	slog.DebugContext(ctx, "rescue teams list loaded",
+		"count", len(results),
+	)
+	return results, nil
 }
 
 func (r *teamPostgresRepo) FindNearby(ctx context.Context, lat, lng float64, radiusMeters int) ([]*model.RescueTeam, error) {
@@ -433,20 +468,33 @@ func (r *teamPostgresRepo) FindNearby(ctx context.Context, lat, lng float64, rad
 
 	rows, err := r.db.QueryContext(ctx, query, lng, lat, radiusMeters)
 	if err != nil {
-		return nil, err
+		slog.ErrorContext(ctx, "failed to query nearby rescue teams",
+			"lat", lat, "lng", lng, "radius_m", radiusMeters,
+			"error", err,
+		)
+		return nil, fmt.Errorf("find nearby rescue_teams query: %w", err)
 	}
 	defer rows.Close()
 
 	var results []*model.RescueTeam
 	for rows.Next() {
 		t := &model.RescueTeam{}
-		if err := rows.Scan(&t.ID, &t.Name, &t.Type, &t.Capabilities, &t.ContactPhone,
+		if err := rows.Scan(&t.ID, &t.Name, &t.Type, pq.Array(&t.Capabilities), &t.ContactPhone,
 			&t.MemberCount, &t.Status, &t.Verified, &t.CurrentLat, &t.CurrentLng); err != nil {
-			return nil, err
+			slog.ErrorContext(ctx, "failed to scan nearby rescue team row",
+				"error", err,
+			)
+			return nil, fmt.Errorf("scan nearby rescue_team row: %w", err)
 		}
 		results = append(results, t)
 	}
-	return results, rows.Err()
+	if err := rows.Err(); err != nil {
+		slog.ErrorContext(ctx, "error iterating nearby rescue teams rows",
+			"error", err,
+		)
+		return nil, fmt.Errorf("nearby rescue_teams rows iteration: %w", err)
+	}
+	return results, nil
 }
 
 func (r *teamPostgresRepo) UpdateStatus(ctx context.Context, id string, status string) error {

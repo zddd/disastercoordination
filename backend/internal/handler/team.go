@@ -45,9 +45,19 @@ func (h *TeamHandler) Register(c *gin.Context) {
 func (h *TeamHandler) List(c *gin.Context) {
 	teams, err := h.svc.List(c.Request.Context())
 	if err != nil {
+		slog.Error("failed to list rescue teams",
+			"error", err,
+			"user_id", c.GetString("user_id"),
+			"user_role", c.GetString("user_role"),
+		)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list teams"})
 		return
 	}
+
+	slog.Debug("rescue teams listed",
+		"count", len(teams),
+		"user_id", c.GetString("user_id"),
+	)
 
 	c.JSON(http.StatusOK, gin.H{"teams": teams, "count": len(teams)})
 }

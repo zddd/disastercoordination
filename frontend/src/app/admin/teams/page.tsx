@@ -1,11 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { apiPost } from "@/lib/fetch";
 import { authFetch } from "@/lib/fetch";
+import { clearAuth } from "@/lib/auth";
 
 interface Team { id:string; name:string; type:string; capabilities:string[]; contact_phone:string; member_count:number; status:string; verified:boolean; }
 
 export default function TeamsPage() {
+  const router = useRouter();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -22,7 +25,13 @@ export default function TeamsPage() {
       const res = await authFetch("/teams");
       if (!res.ok) {
         const msg = await res.text();
-        console.error("[teams] load failed", { status: res.status, message: msg });
+        console.error("[teams] load failed", { status: res.status, message: msg || "(empty body)" });
+        // On 401 (expired/invalid token), clear auth and redirect to login
+        if (res.status === 401) {
+          clearAuth();
+          router.push("/login");
+          return;
+        }
         setError("加载救援队列表失败，请刷新重试");
         return;
       }
