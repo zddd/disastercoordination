@@ -141,8 +141,8 @@ export default function TeamsPage() {
   // Client-side filtering: search by name, phone, capabilities + status select
   const filteredTeams = teams.filter(t => {
     if (statusFilter !== "all" && t.status !== statusFilter) return false;
+    // "verified" filter: teams that have been approved (verified=true, status=active)
     if (statusFilter === "verified" && !t.verified) return false;
-    if (statusFilter === "unverified" && t.verified) return false;
     if (!search) return true;
     const q = search.toLowerCase();
     return (
@@ -176,11 +176,8 @@ export default function TeamsPage() {
           >
             <option value="all">全部状态</option>
             <option value="verified">已认证</option>
-            <option value="unverified">未认证</option>
-            <option value="active">活跃</option>
             <option value="pending">待审核</option>
             <option value="rejected">已拒绝</option>
-            <option value="inactive">停用</option>
           </select>
           <span className="text-xs text-base-content/40 self-center whitespace-nowrap">
             显示 {filteredTeams.length} / {teams.length}

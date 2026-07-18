@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { authFetch } from "@/lib/fetch";
 import { LEVEL_MAP, LEVEL_OPTIONS, TYPE_MAP } from "@/lib/disaster";
 
@@ -11,9 +11,22 @@ export default function DisastersPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ name: "", type: "earthquake", level: "red" });
   const [closeConfirm, setCloseConfirm] = useState<string | null>(null);
+  // Filter state
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const load = () => authFetch("/disasters").then(r => r.json()).then(d => setDisasters(d.disasters || []));
   useEffect(() => { load(); }, []);
+
+  // Client-side filter: search by name/type, filter by status
+  const filtered = useMemo(() => {
+    return disasters.filter(d => {
+      if (statusFilter !== "all" && d.status !== statusFilter) return false;
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return d.name.toLowerCase().includes(q) || (TYPE_MAP[d.type] || d.type).toLowerCase().includes(q);
+    });
+  }, [disasters, search, statusFilter]);
 
   return (
     <div className="space-y-4">
@@ -21,6 +34,31 @@ export default function DisastersPage() {
         <h1 className="text-2xl font-bold">灾害管理</h1>
         <button onClick={() => setShowCreate(true)} className="btn btn-primary btn-sm">+ 创建灾害</button>
       </div>
+
+      {/* Filter bar */}
+      {disasters.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            placeholder="搜索灾害名称或类型..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="input input-bordered input-sm flex-1"
+          />
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            className="select select-bordered select-sm"
+          >
+            <option value="all">全部状态</option>
+            <option value="active">进行中</option>
+            <option value="closed">已结束</option>
+          </select>
+          <span className="text-xs text-base-content/40 self-center whitespace-nowrap">
+            显示 {filtered.length} / {disasters.length}
+          </span>
+        </div>
+      )}
 
       {/* Create modal */}
       {showCreate && (
@@ -86,7 +124,7 @@ export default function DisastersPage() {
               </tr>
             </thead>
             <tbody>
-              {disasters.map(d => {
+              {filtered.map(d => {
                 const levelInfo = LEVEL_MAP[d.level];
                 return (
                   <tr key={d.id} className="hover">
@@ -124,6 +162,12 @@ export default function DisastersPage() {
             <div className="text-center text-base-content/40 py-12">
               <p>暂无灾害记录</p>
               <button onClick={() => setShowCreate(true)} className="btn btn-link btn-sm mt-1">点击创建第一个灾害</button>
+            </div>
+          )}
+          {disasters.length > 0 && filtered.length === 0 && (
+            <div className="text-center text-base-content/40 py-8">
+              <p>没有匹配的灾害</p>
+              <button onClick={() => { setSearch(""); setStatusFilter("all"); }} className="btn btn-link btn-sm mt-1">清除筛选</button>
             </div>
           )}
         </div>
